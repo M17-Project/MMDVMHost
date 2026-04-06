@@ -2029,8 +2029,8 @@ void CDMRSlot::setShortLC(unsigned int slotNo, unsigned int id, FLCO flco, ACTIV
 			m_activity1 = type;
 			if (id != 0U) {
 				unsigned char buffer[3U];
-				buffer[0U] = (id << 16) & 0xFFU;
-				buffer[1U] = (id << 8)  & 0xFFU;
+				buffer[0U] = (id >> 16) & 0xFFU;
+				buffer[1U] = (id >> 8)  & 0xFFU;
 				buffer[2U] = (id << 0)  & 0xFFU;
 				m_id1 = CCRC::crc8(buffer, 3U);
 			}
@@ -2041,8 +2041,8 @@ void CDMRSlot::setShortLC(unsigned int slotNo, unsigned int id, FLCO flco, ACTIV
 			m_activity2 = type;
 			if (id != 0U) {
 				unsigned char buffer[3U];
-				buffer[0U] = (id << 16) & 0xFFU;
-				buffer[1U] = (id << 8)  & 0xFFU;
+				buffer[0U] = (id >> 16) & 0xFFU;
+				buffer[1U] = (id >> 8)  & 0xFFU;
 				buffer[2U] = (id << 0)  & 0xFFU;
 				m_id2 = CCRC::crc8(buffer, 3U);
 			}
