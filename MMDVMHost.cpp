@@ -1143,24 +1143,26 @@ int CMMDVMHost::run()
 		}
 
 		if (m_fm != nullptr && m_fmEnabled) {
-			unsigned int space = m_modem->getFMSpace();
-			if (space > 0U) {
-				len = m_fm->readModem(data, space);
-				if (len > 0U) {
-					if (m_mode == MODE_IDLE) {
-						m_modeTimer.setTimeout(m_fmNetModeHang);
-						setMode(MODE_FM);
-					}
-					if (m_mode == MODE_FM) {
-						m_modem->writeFMData(data, len);
-						m_modeTimer.start();
-					} else if (m_mode != MODE_LOCKOUT) {
-						LogWarning("FM data received when in mode %u", m_mode);
-					}
-				}
-			}
-		}
-
+		    // Trigger mode switch as soon as network data arrives,
+		    // independent of modem space availability
+		    if (m_mode == MODE_IDLE && m_fmNetwork != nullptr &&
+		        m_fmNetwork->hasData()) {
+		        m_modeTimer.setTimeout(m_fmNetModeHang);
+		        setMode(MODE_FM);
+		    }
+		    unsigned int space = m_modem->getFMSpace();
+		    if (space > 0U) {
+		        len = m_fm->readModem(data, space);
+		        if (len > 0U) {
+		            if (m_mode == MODE_FM) {
+		                m_modem->writeFMData(data, len);
+		                m_modeTimer.start();
+		            } else if (m_mode != MODE_IDLE && m_mode != MODE_LOCKOUT) {
+		                LogWarning("FM data received when in mode %u", m_mode);
+		            }
+		        }
+	            }
+        }
 		if (m_ax25 != nullptr && m_ax25Enabled) {
 			ret = m_modem->hasAX25Space();
 			if (ret) {

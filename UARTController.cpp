@@ -435,7 +435,14 @@ int CUARTController::read(unsigned char* buffer, unsigned int length)
 			if (n == 0)
 				return 0;
 		} else {
-			n = ::select(m_fd + 1, &fds, nullptr, nullptr, nullptr);
+			struct timeval tv;
+			tv.tv_sec  = 0;
+			tv.tv_usec = 500000;  // 500ms timeout for frame continuation
+			n = ::select(m_fd + 1, &fds, nullptr, nullptr, &tv);
+			if (n == 0) {
+				LogError("Timeout waiting for modem frame continuation, resetting");
+				return -1;
+			}
 		}
 
 		if (n < 0) {

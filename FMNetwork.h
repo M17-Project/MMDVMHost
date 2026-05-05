@@ -54,6 +54,7 @@ public:
 	void close();
 
 	void clock(unsigned int ms);
+	bool hasData() const;
 
 private:
 	std::string         m_callsign;

@@ -470,6 +470,11 @@ void CFMNetwork::reset()
 	m_buffer.clear();
 }
 
+bool CFMNetwork::hasData() const
+{
+	return m_buffer.dataSize() > 0U;
+}
+
 void CFMNetwork::close()
 {
 	m_socket.close();
