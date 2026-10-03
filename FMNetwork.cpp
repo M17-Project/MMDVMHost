@@ -430,7 +430,7 @@ unsigned int CFMNetwork::readData(float* out, unsigned int nOut)
 
 		for (unsigned int i = 0U; i < nIn; i++) {
 			short val = ((buffer[i * 2U + 0U] & 0xFFU) << 0) + ((buffer[i * 2U + 1U] & 0xFFU) << 8);
-			in[i] = float(val) / 65536.0F;
+			in[i] = float(val) / 32767.0F;
 		}
 
 		SRC_DATA data;
@@ -456,7 +456,7 @@ unsigned int CFMNetwork::readData(float* out, unsigned int nOut)
 
 		for (unsigned int i = 0U; i < nOut; i++) {
 			short val = ((buffer[i * 2U + 0U] & 0xFFU) << 0) + ((buffer[i * 2U + 1U] & 0xFFU) << 8);
-			out[i] = float(val) / 65536.0F;
+			out[i] = float(val) / 32767.0F;
 		}
 #if defined(HAS_SRC)
 	}
