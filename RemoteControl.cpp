@@ -181,10 +181,10 @@ REMOTE_COMMAND CRemoteControl::getCommand()
 		::snprintf(buffer, BUFFER_LENGTH * 2, "%s remote command of \"%s\" received", ((m_command == REMOTE_COMMAND::NONE) ? "Invalid" : "Valid"), command);
 		if (m_command == REMOTE_COMMAND::NONE) {
 			m_args.clear();
-			LogWarning(buffer);
+			LogWarning("%s", buffer);
 		} else {
 #if !defined(REMOTE_COMMAND_NO_LOG)
-			LogMessage(buffer);
+			LogMessage("%s", buffer);
 #endif
 		}
 		
