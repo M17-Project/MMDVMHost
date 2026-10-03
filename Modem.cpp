@@ -1834,6 +1834,9 @@ bool CModem::writeSerial(const unsigned char* data, unsigned int length)
 	assert(data != nullptr);
 	assert(length > 0U);
 
+	if (length > 252U)
+		return false;
+
 	unsigned char buffer[255U];
 
 	buffer[0U] = MMDVM_FRAME_START;
