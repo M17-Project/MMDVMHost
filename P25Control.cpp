@@ -769,7 +769,8 @@ void CP25Control::clock(unsigned int ms)
 		m_networkWatchdog.clock(ms);
 
 		if (m_networkWatchdog.hasExpired()) {
-			LogMessage("P25, network watchdog has expired, %.1f seconds, %u%% packet loss", float(m_netFrames) / 50.0F, (m_netLost * 100U) / m_netFrames);
+			unsigned int netLostPerc = (m_netFrames > 0U) ? (m_netLost * 100U) / m_netFrames : 0U;
+			LogMessage("P25, network watchdog has expired, %.1f seconds, %u%% packet loss", float(m_netFrames) / 50.0F, netLostPerc);
 			m_display->clearP25();
 			m_networkWatchdog.stop();
 			m_netState = RPT_NET_STATE::IDLE;

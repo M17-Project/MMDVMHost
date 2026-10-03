@@ -1047,7 +1047,8 @@ void CYSFControl::writeNetwork()
 	m_netN = n;
 
 	if (end) {
-		LogMessage("YSF, received network end of transmission from %10.10s to DG-ID %u, %.1f seconds, %u%% packet loss, BER: %.1f%%", m_netSource, dgid, float(m_netFrames) / 10.0F, (m_netLost * 100U) / m_netFrames, float(m_netErrs * 100U) / float(m_netBits));
+		unsigned int netLostPerc = (m_netFrames > 0U) ? (m_netLost * 100U) / m_netFrames : 0U;
+		LogMessage("YSF, received network end of transmission from %10.10s to DG-ID %u, %.1f seconds, %u%% packet loss, BER: %.1f%%", m_netSource, dgid, float(m_netFrames) / 10.0F, netLostPerc, float(m_netErrs * 100U) / float(m_netBits));
 		writeEndNet();
 	}
 }
@@ -1067,7 +1068,8 @@ void CYSFControl::clock(unsigned int ms)
 		m_networkWatchdog.clock(ms);
 
 		if (m_networkWatchdog.hasExpired()) {
-			LogMessage("YSF, network watchdog has expired, %.1f seconds, %u%% packet loss, BER: %.1f%%", float(m_netFrames) / 10.0F, (m_netLost * 100U) / m_netFrames, float(m_netErrs * 100U) / float(m_netBits));
+			unsigned int netLostPerc = (m_netFrames > 0U) ? (m_netLost * 100U) / m_netFrames : 0U;
+			LogMessage("YSF, network watchdog has expired, %.1f seconds, %u%% packet loss, BER: %.1f%%", float(m_netFrames) / 10.0F, netLostPerc, float(m_netErrs * 100U) / float(m_netBits));
 			writeEndNet();
 		}
 	}
