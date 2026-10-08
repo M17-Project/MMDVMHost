@@ -671,6 +671,20 @@ void CModem::clock(unsigned int ms)
 			}
 			break;
 
+			case MMDVM_M17_PACKET: {
+				if (m_trace)
+					CUtils::dump(1U, "RX M17 Packet Data", m_buffer, m_length);
+
+				unsigned char data = m_length - 2U;
+				m_rxM17Data.addData(&data, 1U);
+
+				data = TAG_PACKET;
+				m_rxM17Data.addData(&data, 1U);
+
+				m_rxM17Data.addData(m_buffer + 3U, m_length - 3U);
+			}
+			break;
+
 			case MMDVM_M17_EOT: {
 				if (m_trace)
 					CUtils::dump(1U, "RX M17 EOT", m_buffer, m_length);
