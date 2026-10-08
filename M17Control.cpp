@@ -152,6 +152,12 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 		return false;
 	}
 
+	// The modem doesn't send a lost after an EOT, so this is the only end of these transmissions
+	if ((type == TAG_EOT) && ((m_rfState == RPT_RF_STATE::DATA) || (m_rfState == RPT_RF_STATE::REJECTED))) {
+		writeEndRF();
+		return false;
+	}
+
 	// Have we got RSSI bytes on the end?
 	if (len == (M17_FRAME_LENGTH_BYTES + 4U)) {
 		uint16_t raw = 0U;
