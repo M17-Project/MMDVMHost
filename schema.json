@@ -16,7 +16,7 @@
 		"dmr_slot": {"type": "integer", "enum": [1, 2]},
 		"source": {"type": "string", "enum": ["rf", "network"]},
 		"fm_state": {"type": "string", "enum": ["listening", "kerchunk_rf", "relaying_rf", "relaying_wait_rf", "timeout_rf", "timeout_wait_rf", "kerchunk_ext", "relaying_ext", "relaying_wait_ext", "timeout_ext", "timeout_wait_ext", "hang", "unknown"]},
-		"m17_traffic_type": {"type": "string", "enum": ["audio", "audio_data", "data"]},
+		"m17_traffic_type": {"type": "string", "enum": ["audio", "audio_data", "data", "packet"]},
 		"pocsag_source": {"type": "string", "enum": ["local", "network"]},
 		"pocsag_functional": {"type": "string", "enum": ["numeric", "alphanumeric", "alert_1", "alert_2", "end"]},
 		"action": {"type": "string", "enum": ["invalid", "rejected", "start", "late_entry", "end", "lost"]},
@@ -198,5 +198,18 @@
 			"ave": {"$ref": "#/$defs/rssi"}
 		},
 		"required": ["timestamp", "action"]
+	},
+
+	"M17Packet": {
+		"type": "object",
+		"timestamp": {"$ref": "#/$defs/timestamp"},
+		"source": {"$ref": "#/$defs/source"},
+		"src_callsign": {"$ref": "#/$defs/m17_callsign"},
+		"dst_callsign": {"$ref": "#/$defs/m17_callsign"},
+		"protocol": {"type": "integer", "minimum": 0},
+		"length": {"type": "integer", "minimum": 1, "maximum": 823},
+		"text": {"type": "string"},
+		"data": {"type": "string"},
+		"required": ["timestamp", "source", "src_callsign", "dst_callsign", "protocol", "length"]
 	}
 }

@@ -41,6 +41,10 @@ const unsigned int PUNCTURE_LIST_DATA[] = {
 	 11U,  23U,  35U,  47U,  59U,  71U,  83U,  95U, 107U, 119U, 131U, 143U, 155U, 167U, 179U, 191U, 203U, 215U, 227U, 239U, 251U,
 	263U, 275U, 287U};
 
+// P3 puncturing removes every eighth bit
+const unsigned int PUNCTURE_PACKET_PERIOD = 8U;
+const unsigned int PUNCTURE_PACKET_COUNT  = 26U;
+
 const unsigned char BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U};
 
 #define WRITE_BIT1(p,i,b) p[(i)>>3] = (b) ? (p[(i)>>3] | BIT_MASK_TABLE[(i)&7]) : (p[(i)>>3] & ~BIT_MASK_TABLE[(i)&7])
@@ -188,6 +192,36 @@ unsigned int CM17Convolution::decodeData(const unsigned char* in, unsigned char*
 	}
 
 	return chainback(out, 144U) - PUNCTURE_LIST_DATA_COUNT;
+}
+
+unsigned int CM17Convolution::decodePacket(const unsigned char* in, unsigned char* out)
+{
+	assert(in != nullptr);
+	assert(out != nullptr);
+
+	uint8_t temp[420U];
+	::memset(temp, 0x00U, 420U);
+
+	unsigned int n = 0U;
+	for (unsigned int i = 0U; i < 368U; i++) {
+		if ((n % PUNCTURE_PACKET_PERIOD) == (PUNCTURE_PACKET_PERIOD - 1U))
+			temp[n++] = 1U;
+
+		bool b = READ_BIT1(in, i);
+		temp[n++] = b ? 2U : 0U;
+	}
+
+	start();
+
+	n = 0U;
+	for (unsigned int i = 0U; i < 210U; i++) {
+		uint8_t s0 = temp[n++];
+		uint8_t s1 = temp[n++];
+
+		decode(s0, s1);
+	}
+
+	return chainback(out, 206U) - PUNCTURE_PACKET_COUNT;
 }
 
 void CM17Convolution::start()

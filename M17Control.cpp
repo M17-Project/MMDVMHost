@@ -102,16 +102,23 @@ m_rssiAccum(0),
 m_rssiCount(0U),
 m_bitsCount(0U),
 m_bitErrsAccum(0U),
-m_enabled(true)
+m_enabled(true),
+m_rfPacket(nullptr),
+m_rfPacketLength(0U),
+m_rfPacketValid(false),
+m_rfPacketComplete(false)
 {
 	assert(rssiMapper != nullptr);
 
 	m_rfText  = new char[4U * M17_META_LENGTH_BYTES];
 	m_netText = new char[4U * M17_META_LENGTH_BYTES];
+
+	m_rfPacket = new unsigned char[M17_PACKET_MAX_LENGTH_BYTES];
 }
 
 CM17Control::~CM17Control()
 {
+	delete[] m_rfPacket;
 	delete[] m_netText;
 	delete[] m_rfText;
 }
@@ -138,6 +145,18 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 	}
 
 	if ((type == TAG_LOST) && (m_rfState == RPT_RF_STATE::DATA)) {
+		writeEndRF();
+		return false;
+	}
+
+	if ((type == TAG_LOST) && (m_rfState == RPT_RF_STATE::PACKET)) {
+		// The modem doesn't always see the EOT, so a complete packet can also end this way
+		if (m_rfPacketComplete) {
+			logEndRFPacket();
+		} else {
+			LogMessage("M17, packet transmission lost from %s to %s, %.1f seconds, BER: %.1f%%", m_source.c_str(), m_dest.c_str(), float(m_rfFrames + 1U) / 25.0F, float(m_rfErrs * 100U) / float(m_rfBits));
+			writeJSONRF("lost", float(m_rfFrames + 1U) / 25.0F, float(m_rfErrs * 100U) / float(m_rfBits));
+		}
 		writeEndRF();
 		return false;
 	}
@@ -229,12 +248,79 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 			m_rfLSFCount = 0U;
 			m_rfTextBits = 0x00U;
 			::memset(m_rfText, 0x00U, 4U * M17_META_LENGTH_BYTES);
+			m_rfPacketLength   = 0U;
+			m_rfPacketValid    = true;
+			m_rfPacketComplete = false;
 
 			return true;
 		} else {
 			m_rfState = RPT_RF_STATE::LATE_ENTRY;
 			return false;
 		}
+	}
+
+	if ((m_rfState == RPT_RF_STATE::LISTENING) && (data[0U] == TAG_PACKET)) {
+		// A packet can't be used without its link setup frame
+		LogDebug("M17, ignoring packet frame without a link setup frame");
+		return false;
+	}
+
+	if ((m_rfState == RPT_RF_STATE::PACKET) && (data[0U] == TAG_PACKET)) {
+		CM17Convolution conv;
+		unsigned char frame[M17_PACKET_FRAME_LENGTH_BYTES];
+		::memset(frame, 0x00U, M17_PACKET_FRAME_LENGTH_BYTES);
+		unsigned int errors = conv.decodePacket(data + 2U + M17_SYNC_LENGTH_BYTES, frame);
+
+		bool eof = (frame[M17_PACKET_CHUNK_LENGTH_BYTES] & 0x80U) == 0x80U;
+		unsigned int counter = (frame[M17_PACKET_CHUNK_LENGTH_BYTES] >> 2) & 0x1FU;
+
+		LogDebug("M17, packet: %s: %u, errs: %u/368 (%.1f%%)", eof ? "EOF, bytes" : "FN", counter, errors, float(errors) / 3.68F);
+
+		m_rfBits += 368U;
+		m_rfErrs += errors;
+		m_rfFrames++;
+
+		m_bitErrsAccum += errors;
+		m_bitsCount    += 368U;
+
+		writeJSONBER();
+		writeJSONRSSI();
+
+		// Ignore anything after the last frame of the packet
+		if (m_rfPacketComplete)
+			return true;
+
+		if (eof) {
+			if ((counter == 0U) || (counter > M17_PACKET_CHUNK_LENGTH_BYTES) || ((m_rfPacketLength + counter) > M17_PACKET_MAX_LENGTH_BYTES)) {
+				m_rfPacketValid = false;
+			} else {
+				::memcpy(m_rfPacket + m_rfPacketLength, frame, counter);
+				m_rfPacketLength += counter;
+			}
+
+			m_rfPacketComplete = true;
+			processRFPacket();
+		} else {
+			if ((counter != (m_rfPacketLength / M17_PACKET_CHUNK_LENGTH_BYTES)) || ((m_rfPacketLength + M17_PACKET_CHUNK_LENGTH_BYTES) > M17_PACKET_MAX_LENGTH_BYTES)) {
+				// A frame is missing or out of order
+				m_rfPacketValid = false;
+			} else {
+				::memcpy(m_rfPacket + m_rfPacketLength, frame, M17_PACKET_CHUNK_LENGTH_BYTES);
+				m_rfPacketLength += M17_PACKET_CHUNK_LENGTH_BYTES;
+			}
+		}
+
+		return true;
+	}
+
+	if ((m_rfState == RPT_RF_STATE::PACKET) && (data[0U] == TAG_EOT)) {
+		if (!m_rfPacketComplete)
+			LogMessage("M17, RF packet from %s to %s, ended before its last frame", m_source.c_str(), m_dest.c_str());
+
+		logEndRFPacket();
+		writeEndRF();
+
+		return true;
 	}
 
 	if ((m_rfState == RPT_RF_STATE::LISTENING) && (data[0U] == TAG_DATA)) {
@@ -760,7 +846,9 @@ void CM17Control::writeNetwork()
 bool CM17Control::processRFHeader(bool lateEntry)
 {
 	unsigned char packetStream = m_rfCurrentNetLSF.getPacketStream();
-	if (packetStream == M17_PACKET_TYPE)
+
+	// A packet transmission always starts with a link setup frame
+	if (lateEntry && (packetStream == M17_PACKET_TYPE))
 		return false;
 
 	unsigned char can = m_rfCurrentNetLSF.getCAN();
@@ -770,7 +858,8 @@ bool CM17Control::processRFHeader(bool lateEntry)
 	m_source = m_rfCurrentNetLSF.getSource();
 	m_dest   = m_rfCurrentNetLSF.getDest();
 
-	if (!m_allowEncryption) {
+	// The encryption bits are reserved in packet mode
+	if (!m_allowEncryption && (packetStream == M17_STREAM_TYPE)) {
 		unsigned char type = m_rfCurrentNetLSF.getEncryptionType();
 		if (type != M17_ENCRYPTION_TYPE_NONE) {
 			LogMessage("M17, access attempt with encryption from %s to %s", m_source.c_str(), m_dest.c_str());
@@ -788,6 +877,14 @@ bool CM17Control::processRFHeader(bool lateEntry)
 			writeJSONRF("rejected", RPT_RF_STATE::AUDIO, m_source, m_dest);
 			return true;
 		}
+	}
+
+	if (packetStream == M17_PACKET_TYPE) {
+		LogMessage("M17, received RF packet transmission from %s to %s", m_source.c_str(), m_dest.c_str());
+		m_rfState = RPT_RF_STATE::PACKET;
+		writeJSONRF("start", m_rfState, m_source, m_dest);
+
+		return true;
 	}
 
 	unsigned char dataType = m_rfCurrentNetLSF.getDataType();
@@ -838,6 +935,71 @@ bool CM17Control::processRFHeader(bool lateEntry)
 	}
 
 	return true;
+}
+
+void CM17Control::logEndRFPacket()
+{
+	if (m_rssi != 0) {
+		LogMessage("M17, received RF end of packet transmission from %s to %s, %.1f seconds, BER: %.1f%%, RSSI: %d/%d/%d dBm", m_source.c_str(), m_dest.c_str(), float(m_rfFrames + 1U) / 25.0F, float(m_rfErrs * 100U) / float(m_rfBits), m_minRSSI, m_maxRSSI, m_aveRSSI / int(m_rssiCountTotal));
+		writeJSONRF("end", float(m_rfFrames + 1U) / 25.0F, float(m_rfErrs * 100U) / float(m_rfBits), m_minRSSI, m_maxRSSI, m_aveRSSI / int(m_rssiCountTotal));
+	} else {
+		LogMessage("M17, received RF end of packet transmission from %s to %s, %.1f seconds, BER: %.1f%%", m_source.c_str(), m_dest.c_str(), float(m_rfFrames + 1U) / 25.0F, float(m_rfErrs * 100U) / float(m_rfBits));
+		writeJSONRF("end", float(m_rfFrames + 1U) / 25.0F, float(m_rfErrs * 100U) / float(m_rfBits));
+	}
+}
+
+void CM17Control::processRFPacket()
+{
+	if (!m_rfPacketValid) {
+		LogMessage("M17, RF packet from %s to %s, missing frames", m_source.c_str(), m_dest.c_str());
+		return;
+	}
+
+	if (!checkPacket(m_rfPacket, m_rfPacketLength)) {
+		LogMessage("M17, RF packet from %s to %s, failed CRC check, %u bytes", m_source.c_str(), m_dest.c_str(), m_rfPacketLength);
+		return;
+	}
+
+	logPacket(true, m_source, m_dest, m_rfPacket, m_rfPacketLength);
+}
+
+bool CM17Control::checkPacket(const unsigned char* data, unsigned int length) const
+{
+	assert(data != nullptr);
+
+	// At least a protocol identifier and the CRC
+	if (length < (1U + M17_CRC_LENGTH_BYTES))
+		return false;
+
+	return CM17CRC::checkCRC16(data, length);
+}
+
+void CM17Control::logPacket(bool rf, const std::string& source, const std::string& dest, const unsigned char* data, unsigned int length) const
+{
+	assert(data != nullptr);
+
+	const char* from = rf ? "RF" : "network";
+
+	unsigned int dataLength = length - M17_CRC_LENGTH_BYTES;
+
+	switch (data[0U]) {
+	case M17_PACKET_PROTOCOL_SMS: {
+			// The text is null terminated UTF-8, replace any control characters for logging
+			std::string text;
+			for (unsigned int i = 1U; i < dataLength && data[i] != 0x00U; i++)
+				text += (data[i] < 0x20U || data[i] == 0x7FU) ? '.' : char(data[i]);
+
+			LogMessage("M17, %s SMS from %s to %s: \"%s\"", from, source.c_str(), dest.c_str(), text.c_str());
+		}
+		break;
+
+	default:
+		LogMessage("M17, %s packet from %s to %s, protocol: 0x%02X, %u bytes", from, source.c_str(), dest.c_str(), data[0U], dataLength);
+		CUtils::dump(1U, "M17, packet data", data, dataLength);
+		break;
+	}
+
+	writeJSONPacket(rf ? "rf" : "network", source, dest, data, dataLength);
 }
 
 void CM17Control::createRFLSF(bool addCallsign)
@@ -1050,6 +1212,40 @@ void CM17Control::writeJSONText(const char* text)
 	WriteJSON("Text", json);
 }
 
+void CM17Control::writeJSONPacket(const char* source, const std::string& src, const std::string& dst, const unsigned char* data, unsigned int length) const
+{
+	assert(source != nullptr);
+	assert(data != nullptr);
+	assert(length > 0U);
+
+	nlohmann::json json;
+
+	json["timestamp"]    = CUtils::createTimestamp();
+	json["source"]       = source;
+	json["src_callsign"] = src;
+	json["dst_callsign"] = dst;
+	json["protocol"]     = data[0U];
+	json["length"]       = length;
+
+	if (data[0U] == M17_PACKET_PROTOCOL_SMS) {
+		// The text is null terminated, invalid UTF-8 is dropped when the JSON is written
+		std::string text;
+		for (unsigned int i = 1U; i < length && data[i] != 0x00U; i++)
+			text += char(data[i]);
+		json["text"] = text;
+	} else {
+		char hex[3U];
+		std::string payload;
+		for (unsigned int i = 0U; i < length; i++) {
+			::sprintf(hex, "%02X", data[i]);
+			payload += hex;
+		}
+		json["data"] = payload;
+	}
+
+	WriteJSON("M17Packet", json);
+}
+
 void CM17Control::writeJSONRF(const char* action, RPT_RF_STATE state, const std::string& source, const std::string& dest)
 {
 	assert(action != nullptr);
@@ -1144,6 +1340,9 @@ void CM17Control::writeJSONRF(nlohmann::json& json, const char* action, RPT_RF_S
 			break;
 		case RPT_RF_STATE::DATA:
 			json["traffic_type"] = "data";
+			break;
+		case RPT_RF_STATE::PACKET:
+			json["traffic_type"] = "packet";
 			break;
 		default:
 			break;
