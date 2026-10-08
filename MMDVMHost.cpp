@@ -47,6 +47,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <pwd.h>
+#include <grp.h>
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -242,6 +243,12 @@ int CMMDVMHost::run()
 
 			uid_t mmdvm_uid = user->pw_uid;
 			gid_t mmdvm_gid = user->pw_gid;
+
+			// Keep the mmdvm user's supplementary groups, such as dialout for the modem's serial port
+			if (::initgroups(user->pw_name, mmdvm_gid) != 0) {
+				::fprintf(stderr, "Could not set the mmdvm supplementary groups, exiting\n");
+				return -1;
+			}
 
 			// Set user and group ID's to mmdvm:mmdvm
 			if (::setgid(mmdvm_gid) != 0) {
