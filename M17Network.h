@@ -40,6 +40,11 @@ public:
 
 	bool read(unsigned char* data);
 
+	// A packet is a link setup frame with its CRC followed by the packet data with its CRC
+	bool writePacket(const unsigned char* data, unsigned int length);
+
+	unsigned int readPacket(unsigned char* data);
+
 	void reset();
 
 	void close();
@@ -57,6 +62,7 @@ private:
 	uint16_t         m_outId;
 	uint16_t         m_inId;
 	CRingBuffer<unsigned char> m_buffer;
+	CRingBuffer<unsigned char> m_packetBuffer;
 	std::mt19937     m_random;
 	CTimer           m_timer;
 

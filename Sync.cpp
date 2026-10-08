@@ -99,6 +99,13 @@ void CSync::addM17StreamSync(unsigned char* data)
 	::memcpy(data, M17_STREAM_SYNC_BYTES, M17_SYNC_LENGTH_BYTES);
 }
 
+void CSync::addM17PacketSync(unsigned char* data)
+{
+	assert(data != nullptr);
+
+	::memcpy(data, M17_PACKET_SYNC_BYTES, M17_SYNC_LENGTH_BYTES);
+}
+
 void CSync::addM17EOTSync(unsigned char* data)
 {
 	assert(data != nullptr);
