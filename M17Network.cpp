@@ -28,7 +28,10 @@
 #include <cassert>
 #include <cstring>
 
-const unsigned int BUFFER_LENGTH = 200U;
+const unsigned int BUFFER_LENGTH = 1000U;
+
+const unsigned int M17P_MIN_LENGTH = 4U + M17_LSF_LENGTH_BYTES + 1U + M17_CRC_LENGTH_BYTES;
+const unsigned int M17P_MAX_LENGTH = 4U + M17_LSF_LENGTH_BYTES + M17_PACKET_MAX_LENGTH_BYTES;
 
 CM17Network::CM17Network(const std::string& localAddress, unsigned short localPort, const std::string& gatewayAddress, unsigned short gatewayPort, bool debug) :
 m_socket(localAddress, localPort),
@@ -39,6 +42,7 @@ m_enabled(false),
 m_outId(0U),
 m_inId(0U),
 m_buffer(1000U, "M17 Network"),
+m_packetBuffer(2000U, "M17 Network Packet"),
 m_random(),
 m_timer(1000U, 5U)
 {
@@ -110,6 +114,29 @@ bool CM17Network::write(const unsigned char* data)
 	return m_socket.write(buffer, 54U, m_addr, m_addrLen);
 }
 
+bool CM17Network::writePacket(const unsigned char* data, unsigned int length)
+{
+	if (m_addrLen == 0U)
+		return false;
+
+	assert(data != nullptr);
+	assert(length >= (M17P_MIN_LENGTH - 4U) && length <= (M17P_MAX_LENGTH - 4U));
+
+	unsigned char buffer[M17P_MAX_LENGTH];
+
+	buffer[0U] = 'M';
+	buffer[1U] = '1';
+	buffer[2U] = '7';
+	buffer[3U] = 'P';
+
+	::memcpy(buffer + 4U, data, length);
+
+	if (m_debug)
+		CUtils::dump(1U, "M17 Network Transmitted", buffer, length + 4U);
+
+	return m_socket.write(buffer, length + 4U, m_addr, m_addrLen);
+}
+
 void CM17Network::clock(unsigned int ms)
 {
 	m_timer.clock(ms);
@@ -139,6 +166,27 @@ void CM17Network::clock(unsigned int ms)
 
 	if (::memcmp(buffer + 0U, "PING", 4U) == 0)
 		return;
+
+	if (::memcmp(buffer + 0U, "M17P", 4U) == 0) {
+		if ((length < int(M17P_MIN_LENGTH)) || (length > int(M17P_MAX_LENGTH))) {
+			CUtils::dump(2U, "M17, received packet with an invalid length", buffer, length);
+			return;
+		}
+
+		unsigned int len = length - 4U;
+		if (m_packetBuffer.freeSpace() < (len + 2U)) {
+			LogWarning("M17, overflow in the network packet buffer");
+			return;
+		}
+
+		unsigned char c[2U];
+		c[0U] = (len >> 8) & 0xFFU;
+		c[1U] = (len >> 0) & 0xFFU;
+		m_packetBuffer.addData(c, 2U);
+
+		m_packetBuffer.addData(buffer + 4U, len);
+		return;
+	}
 
 	if (::memcmp(buffer + 0U, "M17 ", 4U) != 0) {
 		CUtils::dump(2U, "M17, received unknown packet", buffer, length);
@@ -174,6 +222,22 @@ bool CM17Network::read(unsigned char* data)
 	return true;
 }
 
+unsigned int CM17Network::readPacket(unsigned char* data)
+{
+	assert(data != nullptr);
+
+	if (m_packetBuffer.isEmpty())
+		return 0U;
+
+	unsigned char c[2U];
+	m_packetBuffer.getData(c, 2U);
+
+	unsigned int len = (c[0U] << 8) | c[1U];
+	m_packetBuffer.getData(data, len);
+
+	return len;
+}
+
 void CM17Network::close()
 {
 	m_socket.close();
@@ -191,8 +255,10 @@ void CM17Network::enable(bool enabled)
 {
 	if (enabled && !m_enabled)
 		reset();
-	else if (!enabled && m_enabled)
+	else if (!enabled && m_enabled) {
 		m_buffer.clear();
+		m_packetBuffer.clear();
+	}
 
 	m_enabled = enabled;
 }

@@ -128,6 +128,31 @@ void CM17Convolution::encodeData(const unsigned char* in, unsigned char* out) co
 	}
 }
 
+void CM17Convolution::encodePacket(const unsigned char* in, unsigned char* out) const
+{
+	assert(in != nullptr);
+	assert(out != nullptr);
+
+	unsigned char temp1[27U];
+	::memset(temp1, 0x00U, 27U);
+	::memcpy(temp1, in, 26U);
+
+	// Clear the unused bits after the 206 bits of data, they're used as the flush bits
+	temp1[25U] &= 0xFCU;
+
+	unsigned char temp2[53U];
+	encode(temp1, temp2, 210U);
+
+	unsigned int n = 0U;
+	for (unsigned int i = 0U; i < 420U; i++) {
+		if ((i % PUNCTURE_PACKET_PERIOD) != (PUNCTURE_PACKET_PERIOD - 1U)) {
+			bool b = READ_BIT1(temp2, i);
+			WRITE_BIT1(out, n, b);
+			n++;
+		}
+	}
+}
+
 unsigned int CM17Convolution::decodeLinkSetup(const unsigned char* in, unsigned char* out)
 {
 	assert(in != nullptr);

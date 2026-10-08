@@ -102,10 +102,14 @@ private:
 
 	void processRFPacket();
 	void logEndRFPacket();
+	void processNetPacket(const unsigned char* data, unsigned int length);
 
 	bool checkPacket(const unsigned char* data, unsigned int length) const;
 	void logPacket(bool rf, const std::string& source, const std::string& dest, const unsigned char* data, unsigned int length) const;
 
+	void encodeLinkSetupFrame(const CM17LSF& lsf, unsigned char* data) const;
+	void encodePacketFrame(const unsigned char* frame, unsigned char* data) const;
+	void encodeEOTFrame(unsigned char* data) const;
 
 	void writeQueueRF(const unsigned char* data);
 

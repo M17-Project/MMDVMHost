@@ -1326,6 +1326,9 @@ void CModem::clock(unsigned int ms)
 			case MMDVM_M17_STREAM:
 				CUtils::dump(1U, "TX M17 Stream Data", m_buffer, len);
 				break;
+			case MMDVM_M17_PACKET:
+				CUtils::dump(1U, "TX M17 Packet Data", m_buffer, len);
+				break;
 			case MMDVM_M17_EOT:
 				CUtils::dump(1U, "TX M17 EOT", m_buffer, len);
 				break;
@@ -1800,6 +1803,10 @@ bool CModem::writeM17Data(const unsigned char* data, unsigned int length)
 			break;
 		case TAG_DATA:
 			buffer[2U] = MMDVM_M17_STREAM;
+			::memcpy(buffer + 3U, data + 1U, length - 1U);
+			break;
+		case TAG_PACKET:
+			buffer[2U] = MMDVM_M17_PACKET;
 			::memcpy(buffer + 3U, data + 1U, length - 1U);
 			break;
 		case TAG_EOT:

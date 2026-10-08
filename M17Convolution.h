@@ -36,6 +36,7 @@ public:
 
 	void encodeLinkSetup(const unsigned char* in, unsigned char* out) const;
 	void encodeData(const unsigned char* in, unsigned char* out) const;
+	void encodePacket(const unsigned char* in, unsigned char* out) const;
 
 private:
 	uint16_t* m_metrics1;
