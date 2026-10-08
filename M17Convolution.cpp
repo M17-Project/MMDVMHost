@@ -87,7 +87,7 @@ void CM17Convolution::encodeLinkSetup(const unsigned char* in, unsigned char* ou
 	unsigned int n = 0U;
 	unsigned int index = 0U;
 	for (unsigned int i = 0U; i < 488U; i++) {
-		if (i != PUNCTURE_LIST_LINK_SETUP[index]) {
+		if ((index >= (sizeof(PUNCTURE_LIST_LINK_SETUP) / sizeof(unsigned int))) || (i != PUNCTURE_LIST_LINK_SETUP[index])) {
 			bool b = READ_BIT1(temp2, i);
 			WRITE_BIT1(out, n, b);
 			n++;
@@ -112,7 +112,7 @@ void CM17Convolution::encodeData(const unsigned char* in, unsigned char* out) co
 	unsigned int n = 0U;
 	unsigned int index = 0U;
 	for (unsigned int i = 0U; i < 296U; i++) {
-		if (i != PUNCTURE_LIST_DATA[index]) {
+		if ((index >= (sizeof(PUNCTURE_LIST_DATA) / sizeof(unsigned int))) || (i != PUNCTURE_LIST_DATA[index])) {
 			bool b = READ_BIT1(temp2, i);
 			WRITE_BIT1(out, n, b);
 			n++;
@@ -133,7 +133,7 @@ unsigned int CM17Convolution::decodeLinkSetup(const unsigned char* in, unsigned 
 	unsigned int n = 0U;
 	unsigned int index = 0U;
 	for (unsigned int i = 0U; i < 368U; i++) {
-		if (n == PUNCTURE_LIST_LINK_SETUP[index]) {
+		if ((index < (sizeof(PUNCTURE_LIST_LINK_SETUP) / sizeof(unsigned int))) && (n == PUNCTURE_LIST_LINK_SETUP[index])) {
 			temp[n++] = 1U;
 			index++;
 		}
@@ -166,7 +166,7 @@ unsigned int CM17Convolution::decodeData(const unsigned char* in, unsigned char*
 	unsigned int n = 0U;
 	unsigned int index = 0U;
 	for (unsigned int i = 0U; i < 272U; i++) {
-		if (n == PUNCTURE_LIST_DATA[index]) {
+		if ((index < (sizeof(PUNCTURE_LIST_DATA) / sizeof(unsigned int))) && (n == PUNCTURE_LIST_DATA[index])) {
 			temp[n++] = 1U;
 			index++;
 		}
