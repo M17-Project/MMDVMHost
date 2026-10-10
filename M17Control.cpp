@@ -1123,8 +1123,8 @@ void CM17Control::writeJSONRF(nlohmann::json& json, const char* action, RPT_RF_S
 
 	json["timestamp"] = CUtils::createTimestamp();
 
-	json["source_cs"]      = source;
-	json["destination_cs"] = dest;
+	json["src_callsign"] = source;
+	json["dst_callsign"] = dest;
 
 	json["source"] = "rf";
 	json["action"] = action;
@@ -1169,8 +1169,8 @@ void CM17Control::writeJSONNet(nlohmann::json& json, const char* action, RPT_NET
 
 	json["timestamp"] = CUtils::createTimestamp();
 
-	json["source_cs"]      = source;
-	json["destination_cs"] = dest;
+	json["src_callsign"] = source;
+	json["dst_callsign"] = dest;
 
 	json["source"] = "network";
 	json["action"] = action;
