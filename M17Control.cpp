@@ -126,7 +126,7 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 	unsigned char type = data[0U];
 
 	if (type == TAG_LOST && (m_rfState == RPT_RF_STATE::AUDIO || m_rfState == RPT_RF_STATE::DATA_AUDIO)) {
-		if (m_rssi != 0U) {
+		if (m_rssi != 0) {
 			LogMessage("M17, transmission lost from %s to %s, %.1f seconds, BER: %.1f%%, RSSI: %d/%d/%d dBm", m_source.c_str(), m_dest.c_str(), float(m_rfFrames) / 25.0F, float(m_rfErrs * 100U) / float(m_rfBits), m_minRSSI, m_maxRSSI, m_aveRSSI / int(m_rssiCountTotal));
 			writeJSONRF("lost", float(m_rfFrames) / 25.0F, float(m_rfErrs * 100U) / float(m_rfBits), m_minRSSI, m_maxRSSI, m_aveRSSI / int(m_rssiCountTotal));
 		} else {
@@ -159,7 +159,7 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 		raw |= (data[51U] << 0) & 0x00FFU;
 
 		// Convert the raw RSSI to dBm
-		int m_rssi = m_rssiMapper->interpolate(raw);
+		m_rssi = m_rssiMapper->interpolate(raw);
 		if (m_rssi != 0)
 			LogDebug("M17, raw RSSI: %u, reported RSSI: %d dBm", raw, m_rssi);
 
@@ -172,7 +172,7 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 		m_rssiCountTotal++;
 
 		m_rssiAccum += m_rssi;
-		m_rssiCountTotal++;
+		m_rssiCount++;
 	}
 
 	unsigned char temp[M17_FRAME_LENGTH_BYTES];
@@ -998,18 +998,18 @@ void CM17Control::writeJSONRSSI()
 	if (m_rssi == 0)
 		return;
 
-	if (m_rssiCountTotal >= RSSI_COUNT) {
+	if (m_rssiCount >= RSSI_COUNT) {
 		nlohmann::json json;
 
 		json["timestamp"] = CUtils::createTimestamp();
 		json["mode"]      = "M17";
 
-		json["value"]     = m_rssiAccum / int(m_rssiCountTotal);
+		json["value"]     = m_rssiAccum / int(m_rssiCount);
 
 		WriteJSON("RSSI", json);
 
 		m_rssiAccum = 0;
-		m_rssiCountTotal = 0U;
+		m_rssiCount = 0U;
 	}
 }
 
