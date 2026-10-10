@@ -88,6 +88,10 @@ REMOTE_COMMAND CRemoteControl::getCommand(const std::string& command)
 		else if (m_args.at(1U) == "nxdn")
 			m_command = REMOTE_COMMAND::MODE_NXDN;
 #endif
+#if defined(USE_M17)
+		else if (m_args.at(1U) == "m17")
+			m_command = REMOTE_COMMAND::MODE_M17;
+#endif
 		else
 			reply = "KO";
 	} else if (m_args.at(0U) == "enable" && m_args.size() >= ENABLE_ARGS) {
@@ -114,6 +118,11 @@ REMOTE_COMMAND CRemoteControl::getCommand(const std::string& command)
 #if defined(USE_NXDN)
 		if (m_args.at(1U) == "nxdn")
 			m_command = REMOTE_COMMAND::ENABLE_NXDN;
+		else
+#endif
+#if defined(USE_M17)
+		if (m_args.at(1U) == "m17")
+			m_command = REMOTE_COMMAND::ENABLE_M17;
 		else
 #endif
 #if defined(USE_FM)
@@ -146,6 +155,11 @@ REMOTE_COMMAND CRemoteControl::getCommand(const std::string& command)
 #if defined(USE_NXDN)
 		if (m_args.at(1U) == "nxdn")
 			m_command = REMOTE_COMMAND::DISABLE_NXDN;
+		else
+#endif
+#if defined(USE_M17)
+		if (m_args.at(1U) == "m17")
+			m_command = REMOTE_COMMAND::DISABLE_M17;
 		else
 #endif
 #if defined(USE_FM)
@@ -229,6 +243,9 @@ unsigned int CRemoteControl::getArgCount() const
 #if defined(USE_NXDN)
 		case REMOTE_COMMAND::MODE_NXDN:
 #endif
+#if defined(USE_M17)
+		case REMOTE_COMMAND::MODE_M17:
+#endif
 			return (unsigned int)m_args.size() - SET_MODE_ARGS;
 #if defined(USE_POCSAG)
 		case REMOTE_COMMAND::PAGE:
@@ -263,6 +280,9 @@ std::string CRemoteControl::getArgString(unsigned int n) const
 #endif
 #if defined(USE_NXDN)
 		case REMOTE_COMMAND::MODE_NXDN:
+#endif
+#if defined(USE_M17)
+		case REMOTE_COMMAND::MODE_M17:
 #endif
 			n += SET_MODE_ARGS;
 			break;

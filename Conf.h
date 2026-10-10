@@ -110,6 +110,9 @@ public:
 #if defined(USE_NXDN)
 	float        getModemNXDNTXLevel() const;
 #endif
+#if defined(USE_M17)
+	float        getModemM17TXLevel() const;
+#endif
 #if defined(USE_POCSAG)
 	float        getModemPOCSAGTXLevel() const;
 #endif
@@ -203,6 +206,16 @@ public:
 	bool         getNXDNRemoteGateway() const;
 	unsigned int getNXDNTXHang() const;
 	unsigned int getNXDNModeHang() const;
+#endif
+
+#if defined(USE_M17)
+	// The M17 section
+	bool         getM17Enabled() const;
+	unsigned int getM17CAN() const;
+	bool         getM17SelfOnly() const;
+	bool         getM17AllowEncryption() const;
+	unsigned int getM17TXHang() const;
+	unsigned int getM17ModeHang() const;
 #endif
 
 #if defined(USE_POCSAG)
@@ -310,6 +323,17 @@ public:
 	bool         getNXDNNetworkDebug() const;
 #endif
 
+#if defined(USE_M17)
+	// The M17 Network section
+	bool         getM17NetworkEnabled() const;
+	std::string  getM17GatewayAddress() const;
+	unsigned short getM17GatewayPort() const;
+	std::string  getM17LocalAddress() const;
+	unsigned short getM17LocalPort() const;
+	unsigned int getM17NetworkModeHang() const;
+	bool         getM17NetworkDebug() const;
+#endif
+
 #if defined(USE_POCSAG)
 	// The POCSAG Network section
 	bool         getPOCSAGNetworkEnabled() const;
@@ -406,6 +430,7 @@ private:
 	float        m_modemYSFTXLevel;
 	float        m_modemP25TXLevel;
 	float        m_modemNXDNTXLevel;
+	float        m_modemM17TXLevel;
 	float        m_modemPOCSAGTXLevel;
 	float        m_modemFMTXLevel;
 	std::string  m_modemRSSIMappingFile;
@@ -496,6 +521,15 @@ private:
 	unsigned int m_nxdnTXHang;
 #endif
 	unsigned int m_nxdnModeHang;
+
+#if defined(USE_M17)
+	bool         m_m17Enabled;
+	unsigned int m_m17CAN;
+	bool         m_m17SelfOnly;
+	bool         m_m17AllowEncryption;
+	unsigned int m_m17TXHang;
+#endif
+	unsigned int m_m17ModeHang;
 
 #if defined(USE_POCSAG)
 	bool         m_pocsagEnabled;
@@ -605,6 +639,18 @@ private:
 	unsigned int m_nxdnNetworkModeHang;
 #if defined(USE_NXDN)
 	bool         m_nxdnNetworkDebug;
+#endif
+
+#if defined(USE_M17)
+	bool         m_m17NetworkEnabled;
+	std::string  m_m17GatewayAddress;
+	unsigned short m_m17GatewayPort;
+	std::string  m_m17LocalAddress;
+	unsigned short m_m17LocalPort;
+#endif
+	unsigned int m_m17NetworkModeHang;
+#if defined(USE_M17)
+	bool         m_m17NetworkDebug;
 #endif
 
 #if defined(USE_POCSAG)
