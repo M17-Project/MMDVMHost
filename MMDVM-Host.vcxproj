@@ -201,6 +201,13 @@
     <ClInclude Include="Mutex.h" />
     <ClInclude Include="NullController.h" />
     <ClInclude Include="NXDNAudio.h" />
+    <ClInclude Include="M17Control.h" />
+    <ClInclude Include="M17Convolution.h" />
+    <ClInclude Include="M17CRC.h" />
+    <ClInclude Include="M17Defines.h" />
+    <ClInclude Include="M17LSF.h" />
+    <ClInclude Include="M17Network.h" />
+    <ClInclude Include="M17Utils.h" />
     <ClInclude Include="NXDNControl.h" />
     <ClInclude Include="NXDNConvolution.h" />
     <ClInclude Include="NXDNCRC.h" />
@@ -292,6 +299,12 @@
     <ClCompile Include="Mutex.cpp" />
     <ClCompile Include="NullController.cpp" />
     <ClCompile Include="NXDNAudio.cpp" />
+    <ClCompile Include="M17Control.cpp" />
+    <ClCompile Include="M17Convolution.cpp" />
+    <ClCompile Include="M17CRC.cpp" />
+    <ClCompile Include="M17LSF.cpp" />
+    <ClCompile Include="M17Network.cpp" />
+    <ClCompile Include="M17Utils.cpp" />
     <ClCompile Include="NXDNControl.cpp" />
     <ClCompile Include="NXDNConvolution.cpp" />
     <ClCompile Include="NXDNCRC.cpp" />
