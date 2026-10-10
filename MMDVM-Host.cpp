@@ -1063,7 +1063,7 @@ int CMMDVMHost::run()
 
 #if defined(USE_M17)
 		len = m_modem->readM17Data(data);
-		if (m_m17 != nullptr && len > 0U) {
+		if (m_m17 != nullptr && m_m17Enabled && len > 0U) {
 			if (m_mode == MODE_IDLE) {
 				bool ret = m_m17->writeModem(data, len);
 				if (ret) {
