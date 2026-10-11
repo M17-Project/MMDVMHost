@@ -1,3 +1,21 @@
+This repository adds M17 support back to [G4KLX's MMDVM-Host](https://github.com/g4klx/MMDVM-Host), which removed it in July 2025:
+
+## Branches
+
+- **`master`** follows G4KLX's current `master` (the MQTT/JSON version), with M17 restored on top.
+- **`v1.0`** is G4KLX's `v1.0` release, the last version before MQTT and the one WPSD and Pi-Star use, with M17 restored on top.
+- **`archived-master`** is this repository's previous `master`: G4KLX's code from July 2025 with M17 restored. It is kept for reference and no longer updated.
+
+**If you cloned this repository before October 2026:** `master` was replaced with a new history, not updated, so `git pull` on an old clone will fail or try to merge unrelated work. To switch to the new `master` and keep your old one as `archived-master`, run:
+
+    git fetch origin
+    git branch -m master archived-master
+    git checkout -b master origin/master
+
+If you have no local changes to keep, `git checkout master && git reset --hard origin/master` does the same in one step and discards your local `master`.
+
+## Original README from upstream
+
 These are the source files for building the MMDVM Host, the program that
 interfaces to the MMDVM or DVMega on the one side, and a suitable network (via a
 gateway) on the other. It supports D-Star, DMR, P25 Phase 1, NXDN, System Fusion,
