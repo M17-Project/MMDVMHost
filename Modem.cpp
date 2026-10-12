@@ -1722,7 +1722,7 @@ bool CModem::writeP25Info(const char* source, bool group, unsigned int dest, con
 	buffer[1U] = 31U;
 	buffer[2U] = MMDVM_QSO_INFO;
 
-	buffer[3U] = MODE_DMR;
+	buffer[3U] = MODE_P25;
 
 	::sprintf((char*)(buffer + 4U), "%20.20s", source);
 
@@ -1813,7 +1813,7 @@ bool CModem::writeIPInfo(const std::string& address)
 
 	size_t length = address.size();
 
-	unsigned char buffer[25U];
+	unsigned char buffer[60U];
 
 	buffer[0U] = MMDVM_FRAME_START;
 	buffer[1U] = (unsigned char)length + 4U;
@@ -1833,6 +1833,9 @@ bool CModem::writeSerial(const unsigned char* data, unsigned int length)
 	assert(m_port != nullptr);
 	assert(data != nullptr);
 	assert(length > 0U);
+
+	if (length > 252U)
+		return false;
 
 	unsigned char buffer[255U];
 
