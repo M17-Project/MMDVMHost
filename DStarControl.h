@@ -106,6 +106,7 @@ private:
 	unsigned char*             m_rfDataLookBack;
 	unsigned int               m_rfDataLookBackLen;
 	unsigned int               m_rfDataLookBackIndex;
+	bool                       m_rfDataLookBackReplay;
 	unsigned char*             m_netDataLookBack;
 	unsigned int               m_netDataLookBackLen;
 	unsigned int               m_netDataLookBackIndex;
