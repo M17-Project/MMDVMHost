@@ -93,8 +93,23 @@ private:
 	unsigned int               m_bitsCount;
 	unsigned int               m_bitErrsAccum;
 	bool                       m_enabled;
+	unsigned char*             m_rfPacket;
+	unsigned int               m_rfPacketLength;
+	bool                       m_rfPacketValid;
+	bool                       m_rfPacketComplete;
 
 	bool processRFHeader(bool lateEntry);
+
+	void processRFPacket();
+	void logEndRFPacket();
+	void processNetPacket(const unsigned char* data, unsigned int length);
+
+	bool checkPacket(const unsigned char* data, unsigned int length) const;
+	void logPacket(bool rf, const std::string& source, const std::string& dest, const unsigned char* data, unsigned int length) const;
+
+	void encodeLinkSetupFrame(const CM17LSF& lsf, unsigned char* data) const;
+	void encodePacketFrame(const unsigned char* frame, unsigned char* data) const;
+	void encodeEOTFrame(unsigned char* data) const;
 
 	void writeQueueRF(const unsigned char* data);
 
@@ -115,6 +130,7 @@ private:
 	void writeJSONRSSI();
 	void writeJSONBER();
 	void writeJSONText(const char* text);
+	void writeJSONPacket(const char* source, const std::string& src, const std::string& dst, const unsigned char* data, unsigned int length) const;
 
 	void writeJSONRF(const char* action, RPT_RF_STATE state, const std::string& source, const std::string& dest);
 	void writeJSONRF(const char* action, float duration, float ber);

@@ -98,7 +98,7 @@ unsigned char CM17LSF::getPacketStream() const
 
 void CM17LSF::setPacketStream(unsigned char ps)
 {
-	m_lsf[13U] &= 0xF7U;
+	m_lsf[13U] &= 0xFEU;
 	m_lsf[13U] |= ps & 0x01U;
 }
 

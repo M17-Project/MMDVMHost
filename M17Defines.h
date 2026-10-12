@@ -26,7 +26,11 @@ const unsigned int M17_FRAME_LENGTH_BYTES   = M17_FRAME_LENGTH_BITS / 8U;
 
 const unsigned char M17_LINK_SETUP_SYNC_BYTES[] = {0x55U, 0xF7U};
 const unsigned char M17_STREAM_SYNC_BYTES[]     = {0xFFU, 0x5DU};
+const unsigned char M17_PACKET_SYNC_BYTES[]     = {0x75U, 0xFFU};
 const unsigned char M17_EOT_SYNC_BYTES[]        = {0x55U, 0x5DU};
+
+// The +3, -3 preamble that precedes a link setup frame
+const unsigned char M17_PREAMBLE_BYTE = 0x77U;
 
 const unsigned int  M17_SYNC_LENGTH_BITS  = 16U;
 const unsigned int  M17_SYNC_LENGTH_BYTES = M17_SYNC_LENGTH_BITS / 8U;
@@ -58,6 +62,15 @@ const unsigned int M17_FN_LENGTH_BYTES = M17_FN_LENGTH_BITS / 8U;
 
 const unsigned int M17_CRC_LENGTH_BITS  = 16U;
 const unsigned int M17_CRC_LENGTH_BYTES = M17_CRC_LENGTH_BITS / 8U;
+
+const unsigned int M17_PACKET_CHUNK_LENGTH_BYTES = 25U;
+const unsigned int M17_PACKET_FRAME_LENGTH_BITS  = M17_PACKET_CHUNK_LENGTH_BYTES * 8U + 6U;
+const unsigned int M17_PACKET_FRAME_LENGTH_BYTES = M17_PACKET_CHUNK_LENGTH_BYTES + 1U;
+const unsigned int M17_PACKET_MAX_FRAMES         = 33U;
+const unsigned int M17_PACKET_MAX_LENGTH_BYTES   = M17_PACKET_CHUNK_LENGTH_BYTES * M17_PACKET_MAX_FRAMES;
+
+const unsigned char M17_PACKET_PROTOCOL_RAW  = 0x00U;
+const unsigned char M17_PACKET_PROTOCOL_SMS  = 0x05U;
 
 const unsigned char M17_3200_SILENCE[] = {0x01U, 0x00U, 0x09U, 0x43U, 0x9CU, 0xE4U, 0x21U, 0x08U};
 const unsigned char M17_1600_SILENCE[] = {0x0CU, 0x41U, 0x09U, 0x03U, 0x0CU, 0x41U, 0x09U, 0x03U};
