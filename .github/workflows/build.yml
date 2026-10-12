@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Debian bookworm has the same compiler as WPSD and Pi-Star
+    runs-on: ubuntu-latest
+    container: debian:bookworm
+    defaults:
+      run:
+        # The container's sh is dash, which has no pipefail
+        shell: bash
+    steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential git ca-certificates libmosquitto-dev nlohmann-json3-dev
+
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          # The Makefile runs git for the version, and the container's user doesn't own the checkout
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          set -o pipefail
+          make -j"$(nproc)" 2>&1 | tee build.log
+
+      - name: Report warnings
+        if: always()
+        run: |
+          count=$(grep -c "warning:" build.log || true)
+          grep "warning:" build.log | sed 's/^/::warning::/' || true
+          echo "Compiler warnings: $count" >> "$GITHUB_STEP_SUMMARY"
