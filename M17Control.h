@@ -87,9 +87,24 @@ private:
 	unsigned int               m_aveRSSI;
 	unsigned int               m_rssiCount;
 	bool                       m_enabled;
+	unsigned char*             m_rfPacket;
+	unsigned int               m_rfPacketLength;
+	bool                       m_rfPacketValid;
+	bool                       m_rfPacketComplete;
 	FILE*                      m_fp;
 
 	bool processRFHeader(bool lateEntry);
+
+	void processRFPacket();
+	void logEndRFPacket();
+	void processNetPacket(const unsigned char* data, unsigned int length);
+
+	bool checkPacket(const unsigned char* data, unsigned int length) const;
+	void logPacket(const char* from, const std::string& source, const std::string& dest, const unsigned char* data, unsigned int length) const;
+
+	void encodeLinkSetupFrame(const CM17LSF& lsf, unsigned char* data) const;
+	void encodePacketFrame(const unsigned char* frame, unsigned char* data) const;
+	void encodeEOTFrame(unsigned char* data) const;
 
 	void writeQueueRF(const unsigned char* data);
 

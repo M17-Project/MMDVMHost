@@ -671,6 +671,20 @@ void CModem::clock(unsigned int ms)
 			}
 			break;
 
+			case MMDVM_M17_PACKET: {
+				if (m_trace)
+					CUtils::dump(1U, "RX M17 Packet Data", m_buffer, m_length);
+
+				unsigned char data = m_length - 2U;
+				m_rxM17Data.addData(&data, 1U);
+
+				data = TAG_PACKET;
+				m_rxM17Data.addData(&data, 1U);
+
+				m_rxM17Data.addData(m_buffer + 3U, m_length - 3U);
+			}
+			break;
+
 			case MMDVM_M17_EOT: {
 				if (m_trace)
 					CUtils::dump(1U, "RX M17 EOT", m_buffer, m_length);
@@ -1070,6 +1084,9 @@ void CModem::clock(unsigned int ms)
 				break;
 			case MMDVM_M17_STREAM:
 				CUtils::dump(1U, "TX M17 Stream Data", m_buffer, len);
+				break;
+			case MMDVM_M17_PACKET:
+				CUtils::dump(1U, "TX M17 Packet Data", m_buffer, len);
 				break;
 			case MMDVM_M17_EOT:
 				CUtils::dump(1U, "TX M17 EOT", m_buffer, len);
@@ -1515,6 +1532,10 @@ bool CModem::writeM17Data(const unsigned char* data, unsigned int length)
 			break;
 		case TAG_DATA:
 			buffer[2U] = MMDVM_M17_STREAM;
+			::memcpy(buffer + 3U, data + 1U, length - 1U);
+			break;
+		case TAG_PACKET:
+			buffer[2U] = MMDVM_M17_PACKET;
 			::memcpy(buffer + 3U, data + 1U, length - 1U);
 			break;
 		case TAG_EOT:
