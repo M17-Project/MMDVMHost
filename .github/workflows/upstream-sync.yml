@@ -1,0 +1,105 @@
+name: Upstream sync
+
+# Opens a pull request from G4KLX's master when it has commits this master doesn't. Merge it with
+# "Create a merge commit". G4KLX's v1.0 is a fixed tag, so the v1.0 branch isn't synced.
+#
+# GitHub doesn't run other workflows for a pull request opened with the workflow's token, so the
+# merge is test-built here and the result goes in the pull request. Later pushes to G4KLX's master
+# update the pull request, and the Build workflow runs for those.
+#
+# If the merge conflicts, resolve it locally: merge g4klx/master into a branch off master, open a
+# pull request from that branch, and close the one opened here.
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    # The same compiler as the Build workflow
+    container: debian:bookworm
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Install the tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential git ca-certificates gh libmosquitto-dev nlohmann-json3-dev
+
+      - uses: actions/checkout@v7
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Check for upstream changes
+        id: check
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git remote add upstream https://github.com/g4klx/MMDVMHost.git
+          git fetch -q upstream master
+
+          count=$(git rev-list --count HEAD..upstream/master)
+          pr=$(gh pr list -R "$GITHUB_REPOSITORY" --base master --state open --json number,headRepositoryOwner,headRefName \
+            -q '.[] | select(.headRepositoryOwner.login == "g4klx" and .headRefName == "master") | .number')
+
+          if [ "$count" -eq 0 ]; then
+            echo "master is up to date with G4KLX's master" | tee -a "$GITHUB_STEP_SUMMARY"
+          elif [ -n "$pr" ]; then
+            echo "G4KLX's master has $count new commits, already in #$pr" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "open=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Test the merge and build
+        if: steps.check.outputs.open == 'true'
+        id: test
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git merge -q --no-commit --no-ff upstream/master; then
+            echo "merge=clean" >> "$GITHUB_OUTPUT"
+            if make -j"$(nproc)" > build.log 2>&1; then
+              echo "build=succeeded, $(grep -c 'warning:' build.log || true) warnings" >> "$GITHUB_OUTPUT"
+            else
+              echo "build=failed" >> "$GITHUB_OUTPUT"
+              tail -30 build.log
+            fi
+          else
+            echo "merge=conflicts in $(git diff --name-only --diff-filter=U | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+            echo "build=not attempted" >> "$GITHUB_OUTPUT"
+          fi
+          git merge --abort || true
+
+      - name: Open the pull request
+        if: steps.check.outputs.open == 'true'
+        run: |
+          {
+            echo "G4KLX's master has ${{ steps.check.outputs.count }} commits that aren't in this master:"
+            echo
+            git log --format='- %h %s (%an)' HEAD..upstream/master | head -50
+            echo
+            echo "Test merge: ${{ steps.test.outputs.merge }}"
+            echo
+            echo "Build of the merge: ${{ steps.test.outputs.build }}"
+            echo
+            echo "Merge with \"Create a merge commit\". If the merge conflicts, merge g4klx/master into a branch off master locally, resolve the conflicts there, open a pull request from that branch and close this one."
+          } > body.md
+          # Maintainer edits would need write access to G4KLX's repository
+          gh pr create -R "$GITHUB_REPOSITORY" --base master --head g4klx:master --no-maintainer-edit \
+            --title "Merge G4KLX's master" --body-file body.md | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ steps.test.outputs.merge }}" != "clean" ] || [ "${{ steps.test.outputs.build }}" = "failed" ]; then
+            echo "::error::The merge needs attention: ${{ steps.test.outputs.merge }}, build ${{ steps.test.outputs.build }}"
+            exit 1
+          fi
