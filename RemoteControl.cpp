@@ -171,6 +171,14 @@ REMOTE_COMMAND CRemoteControl::getCommand(const std::string& command)
 	} else if (m_args.at(0U) == "cw" && m_args.size() >= CW_ARGS) {
 		// CW command is in the form of "cw <message>"
 		m_command = REMOTE_COMMAND::CW;
+	} else if (m_args.at(0U) == "listen" && m_args.size() >= 2U) {
+		// "listen on" (hear RF, never transmit, networks off) or "listen off"
+		if (m_args.at(1U) == "on")
+			m_command = REMOTE_COMMAND::LISTEN_ON;
+		else if (m_args.at(1U) == "off")
+			m_command = REMOTE_COMMAND::LISTEN_OFF;
+		else
+			reply = "KO";
 	} else if (m_args.at(0U) == "reload") {
 		// Reload command is in the form of "reload"
 		m_command = REMOTE_COMMAND::RELOAD;

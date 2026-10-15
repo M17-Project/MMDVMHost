@@ -17,6 +17,7 @@
  */
 
 #include "P25Network.h"
+#include "ListenOnly.h"
 #include "P25Defines.h"
 #include "Utils.h"
 #include "Log.h"
@@ -119,6 +120,10 @@ bool CP25Network::open()
 
 bool CP25Network::writeLDU1(const unsigned char* ldu1, const CP25Data& control, const CP25LowSpeedData& lsd, bool end)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	assert(ldu1 != nullptr);
 
 	unsigned char buffer[22U];
@@ -248,6 +253,10 @@ bool CP25Network::writeLDU1(const unsigned char* ldu1, const CP25Data& control, 
 
 bool CP25Network::writeLDU2(const unsigned char* ldu2, const CP25Data& control, const CP25LowSpeedData& lsd, bool end)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	assert(ldu2 != nullptr);
 
 	unsigned char buffer[22U];
