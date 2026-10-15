@@ -47,6 +47,9 @@
     <ClInclude Include="Hamming.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ListenOnly.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>

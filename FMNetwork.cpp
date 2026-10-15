@@ -17,6 +17,7 @@
  */
 
 #include "FMNetwork.h"
+#include "ListenOnly.h"
 #include "Utils.h"
 #include "Log.h"
 
@@ -80,6 +81,10 @@ bool CFMNetwork::open()
 
 bool CFMNetwork::writeData(const float* data, unsigned int nSamples)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	assert(data != nullptr);
 	assert(nSamples > 0U);
 
@@ -118,6 +123,10 @@ bool CFMNetwork::writeData(const float* data, unsigned int nSamples)
 
 bool CFMNetwork::writeStart()
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	uint8_t buffer[20U];
 
 	unsigned int length = 0U;
@@ -139,6 +148,10 @@ bool CFMNetwork::writeStart()
 
 bool CFMNetwork::writeEnd()
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	uint8_t buffer[5U];
 
 	buffer[0U] = 'F';
