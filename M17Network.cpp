@@ -17,6 +17,7 @@
  */
 
 #include "M17Network.h"
+#include "ListenOnly.h"
 #include "M17Defines.h"
 #include "M17Utils.h"
 #include "Utils.h"
@@ -81,6 +82,10 @@ bool CM17Network::open()
 
 bool CM17Network::write(const unsigned char* data)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	if (m_addrLen == 0U)
 		return false;
 
@@ -116,6 +121,10 @@ bool CM17Network::write(const unsigned char* data)
 
 bool CM17Network::writePacket(const unsigned char* data, unsigned int length)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	if (m_addrLen == 0U)
 		return false;
 

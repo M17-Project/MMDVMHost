@@ -2120,7 +2120,7 @@ bool CMMDVMHost::createM17Network()
 		return false;
 	}
 
-	m_m17Network->enable(true);
+	m_m17Network->enable(!m_listenOnly);
 
 	return true;
 }
@@ -2655,7 +2655,7 @@ void CMMDVMHost::setMode(unsigned char mode)
 			m_nxdnNetwork->enable(false);
 #endif
 		if (m_m17Network != nullptr && m_m17Enabled)
-			m_m17Network->enable(true);
+			m_m17Network->enable(!m_listenOnly);
 #if defined(USE_POCSAG)
 		if (m_pocsagNetwork != nullptr)
 			m_pocsagNetwork->enable(false);
@@ -3034,7 +3034,7 @@ void CMMDVMHost::setMode(unsigned char mode)
 #endif
 #if defined(USE_M17)
 		if (m_m17Network != nullptr && m_m17Enabled)
-			m_m17Network->enable(true);
+			m_m17Network->enable(!m_listenOnly);
 #endif
 #if defined(USE_POCSAG)
 		if (m_pocsagNetwork != nullptr)
@@ -3148,6 +3148,10 @@ void CMMDVMHost::setListenOnly(bool on)
 #if defined(USE_NXDN)
 	if (m_nxdnNetwork != nullptr)
 		m_nxdnNetwork->enable(!on && m_nxdnEnabled);
+#endif
+#if defined(USE_M17)
+	if (m_m17Network != nullptr)
+		m_m17Network->enable(!on && m_m17Enabled);
 #endif
 #if defined(USE_POCSAG)
 	if (m_pocsagNetwork != nullptr)
@@ -3268,7 +3272,7 @@ void CMMDVMHost::remoteControl(const std::string& commandString)
 			if (m_m17 != nullptr && !m_m17Enabled)
 				processEnableCommand(m_m17Enabled, true);
 			if (m_m17Network != nullptr)
-				m_m17Network->enable(true);
+				m_m17Network->enable(!m_listenOnly);
 			break;
 #endif
 #if defined(USE_FM)

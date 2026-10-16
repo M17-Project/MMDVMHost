@@ -1807,6 +1807,9 @@ bool CModem::hasM17Space() const
 
 bool CModem::writeM17Data(const unsigned char* data, unsigned int length)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(data != nullptr);
 	assert(length > 0U);
 
@@ -3458,6 +3461,9 @@ void CModem::setTXInhibit(bool inhibit)
 		m_txYSFData.clear();
 		m_txP25Data.clear();
 		m_txNXDNData.clear();
+#if defined(USE_M17)
+		m_txM17Data.clear();
+#endif
 		m_txPOCSAGData.clear();
 		m_txFMData.clear();
 	}
