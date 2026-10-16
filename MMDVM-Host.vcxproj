@@ -194,6 +194,7 @@
     <ClInclude Include="Hamming.h" />
     <ClInclude Include="DMRLookup.h" />
     <ClInclude Include="IIRDirectForm1Filter.h" />
+    <ClInclude Include="ListenOnly.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="MMDVM-Host.h" />
     <ClInclude Include="ModemPort.h" />

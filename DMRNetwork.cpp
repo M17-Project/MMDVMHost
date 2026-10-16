@@ -17,6 +17,7 @@
  */
 
 #include "DMRNetwork.h"
+#include "ListenOnly.h"
 #include "Utils.h"
 #include "Log.h"
 
@@ -185,6 +186,10 @@ bool CDMRNetwork::read(CDMRData& data, TrunkingCommandParameters& command)
 
 bool CDMRNetwork::write(const CDMRData& data)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	unsigned char buffer[HOMEBREW_DATA_PACKET_LENGTH];
 	::memset(buffer, 0x00U, HOMEBREW_DATA_PACKET_LENGTH);
 
@@ -253,6 +258,10 @@ bool CDMRNetwork::write(const CDMRData& data)
 
 bool CDMRNetwork::writeRadioPosition(unsigned int id, const unsigned char* data)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	unsigned char buffer[20U];
 
 	::memcpy(buffer + 0U, "DMRG", 4U);
@@ -268,6 +277,10 @@ bool CDMRNetwork::writeRadioPosition(unsigned int id, const unsigned char* data)
 
 bool CDMRNetwork::writeTalkerAlias(unsigned int id, unsigned char type, const unsigned char* data)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	unsigned char buffer[20U];
 
 	::memcpy(buffer + 0U, "DMRA", 4U);

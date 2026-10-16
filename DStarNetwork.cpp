@@ -17,6 +17,7 @@
  */
 
 #include "DStarDefines.h"
+#include "ListenOnly.h"
 #include "DStarNetwork.h"
 #include "StopWatch.h"
 #include "Defines.h"
@@ -81,6 +82,10 @@ bool CDStarNetwork::open()
 
 bool CDStarNetwork::writeHeader(const unsigned char* header, unsigned int length, bool busy)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	assert(header != nullptr);
 
 	unsigned char buffer[50U];
@@ -119,6 +124,10 @@ bool CDStarNetwork::writeHeader(const unsigned char* header, unsigned int length
 
 bool CDStarNetwork::writeData(const unsigned char* data, unsigned int length, unsigned int errors, bool end, bool busy)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	assert(data != nullptr);
 
 	unsigned char buffer[30U];
