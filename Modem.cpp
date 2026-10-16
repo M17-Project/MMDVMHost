@@ -300,6 +300,7 @@ m_pocsagSpace(0U),
 m_fmSpace(0U),
 #endif
 m_tx(false),
+m_txInhibit(false),
 m_cd(false),
 m_lockout(false),
 m_error(false),
@@ -1587,6 +1588,9 @@ bool CModem::hasDStarSpace() const
 
 bool CModem::writeDStarData(const unsigned char* data, unsigned int length)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(data != nullptr);
 	assert(length > 0U);
 
@@ -1637,6 +1641,9 @@ bool CModem::hasDMRSpace2() const
 
 bool CModem::writeDMRData1(const unsigned char* data, unsigned int length)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(data != nullptr);
 	assert(length > 0U);
 
@@ -1660,6 +1667,9 @@ bool CModem::writeDMRData1(const unsigned char* data, unsigned int length)
 
 bool CModem::writeDMRData2(const unsigned char* data, unsigned int length)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(data != nullptr);
 	assert(length > 0U);
 
@@ -1692,6 +1702,9 @@ bool CModem::hasYSFSpace() const
 
 bool CModem::writeYSFData(const unsigned char* data, unsigned int length)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(data != nullptr);
 	assert(length > 0U);
 
@@ -1724,6 +1737,9 @@ bool CModem::hasP25Space() const
 
 bool CModem::writeP25Data(const unsigned char* data, unsigned int length)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(data != nullptr);
 	assert(length > 0U);
 
@@ -1756,6 +1772,9 @@ bool CModem::hasNXDNSpace() const
 
 bool CModem::writeNXDNData(const unsigned char* data, unsigned int length)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(data != nullptr);
 	assert(length > 0U);
 
@@ -1788,6 +1807,9 @@ bool CModem::hasM17Space() const
 
 bool CModem::writeM17Data(const unsigned char* data, unsigned int length)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(data != nullptr);
 	assert(length > 0U);
 
@@ -1835,6 +1857,9 @@ bool CModem::hasPOCSAGSpace() const
 
 bool CModem::writePOCSAGData(const unsigned char* data, unsigned int length)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(data != nullptr);
 	assert(length > 0U);
 
@@ -1862,6 +1887,9 @@ unsigned int CModem::getFMSpace() const
 
 bool CModem::writeFMData(const unsigned char* data, unsigned int length)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(data != nullptr);
 	assert(length > 0U);
 
@@ -2917,6 +2945,9 @@ bool CModem::setMode(unsigned char mode)
 
 bool CModem::sendCWId(const std::string& callsign)
 {
+	if (m_txInhibit)
+		return true;
+
 	assert(m_port != nullptr);
 
 	unsigned int length = (unsigned int)callsign.length();
@@ -2941,6 +2972,10 @@ bool CModem::sendCWId(const std::string& callsign)
 bool CModem::writeDMRStart(bool tx)
 {
 	assert(m_port != nullptr);
+
+	// Listen-only: never key up.
+	if (m_txInhibit)
+		tx = false;
 
 	if (tx && m_tx)
 		return true;
@@ -2982,6 +3017,9 @@ bool CModem::writeDMRAbort(unsigned int slotNo)
 
 bool CModem::writeDMRAloha(unsigned int systemCode, bool registrationRequired, bool alternateSlot)
 {
+	if (m_txInhibit)
+		return true;
+
 	// 7.1.1.1.4 Aloha (C_ALOHA) CSBK PDU
 	assert(m_port != NULL);
 	CDMRCSBK csbk;
@@ -3050,6 +3088,9 @@ void CModem::setDMRShortLC(unsigned int systemCode, bool isControlChannel, bool 
 
 bool CModem::writeDMRShortLC(const unsigned char* lc, bool control)
 {
+	if (m_txInhibit)
+		return true;
+
 	if (!control && m_dmrTrunkingEnabled)
 		return true;
 
@@ -3407,3 +3448,23 @@ bool CModem::getDMRControlChannel() const
 	return m_dmrControlChannel;
 }
 #endif
+
+void CModem::setTXInhibit(bool inhibit)
+{
+	m_txInhibit = inhibit;
+
+	if (inhibit) {
+		writeDMRStart(false);
+		m_txDStarData.clear();
+		m_txDMRData1.clear();
+		m_txDMRData2.clear();
+		m_txYSFData.clear();
+		m_txP25Data.clear();
+		m_txNXDNData.clear();
+#if defined(USE_M17)
+		m_txM17Data.clear();
+#endif
+		m_txPOCSAGData.clear();
+		m_txFMData.clear();
+	}
+}

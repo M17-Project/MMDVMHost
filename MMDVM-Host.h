@@ -58,6 +58,7 @@ public:
 	void buildNetworkHostsString(std::string &str);
 
 private:
+	void setListenOnly(bool on);
 	CConf           m_conf;
 	CModem*         m_modem;
 #if defined(USE_DSTAR)
@@ -169,6 +170,7 @@ private:
 	bool            m_m17Enabled;
 	bool            m_pocsagEnabled;
 	bool            m_fmEnabled;
+	bool            m_listenOnly;
 	unsigned int    m_cwIdTime;
 #if defined(USE_DMR) || defined(USE_P25)
 	CDMRLookup*     m_dmrLookup;

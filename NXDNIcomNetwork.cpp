@@ -17,6 +17,7 @@
  */
 
 #include "NXDNIcomNetwork.h"
+#include "ListenOnly.h"
 #include "NXDNDefines.h"
 #include "Utils.h"
 #include "Log.h"
@@ -62,6 +63,10 @@ bool CNXDNIcomNetwork::open()
 
 bool CNXDNIcomNetwork::write(const unsigned char* data, NXDN_NETWORK_MESSAGE_TYPE type)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	assert(data != nullptr);
 
 	unsigned char buffer[110U];

@@ -251,6 +251,7 @@ m_nxdnEnabled(false),
 m_m17Enabled(false),
 m_pocsagEnabled(false),
 m_fmEnabled(false),
+m_listenOnly(false),
 m_cwIdTime(0U),
 #if defined(USE_DMR) || defined(USE_P25)
 m_dmrLookup(nullptr),
@@ -1948,7 +1949,7 @@ bool CMMDVMHost::createDStarNetwork()
 		return false;
 	}
 
-	m_dstarNetwork->enable(true);
+	m_dstarNetwork->enable(!m_listenOnly);
 
 	return true;
 }
@@ -1987,7 +1988,7 @@ bool CMMDVMHost::createDMRNetwork()
 		return false;
 	}
 
-	m_dmrNetwork->enable(true);
+	m_dmrNetwork->enable(!m_listenOnly);
 
 	return true;
 }
@@ -2019,7 +2020,7 @@ bool CMMDVMHost::createYSFNetwork()
 		return false;
 	}
 
-	m_ysfNetwork->enable(true);
+	m_ysfNetwork->enable(!m_listenOnly);
 
 	return true;
 }
@@ -2051,7 +2052,7 @@ bool CMMDVMHost::createP25Network()
 		return false;
 	}
 
-	m_p25Network->enable(true);
+	m_p25Network->enable(!m_listenOnly);
 
 	return true;
 }
@@ -2088,7 +2089,7 @@ bool CMMDVMHost::createNXDNNetwork()
 		return false;
 	}
 
-	m_nxdnNetwork->enable(true);
+	m_nxdnNetwork->enable(!m_listenOnly);
 
 	return true;
 }
@@ -2119,7 +2120,7 @@ bool CMMDVMHost::createM17Network()
 		return false;
 	}
 
-	m_m17Network->enable(true);
+	m_m17Network->enable(!m_listenOnly);
 
 	return true;
 }
@@ -2151,7 +2152,7 @@ bool CMMDVMHost::createPOCSAGNetwork()
 		return false;
 	}
 
-	m_pocsagNetwork->enable(true);
+	m_pocsagNetwork->enable(!m_listenOnly);
 
 	return true;
 }
@@ -2192,7 +2193,7 @@ bool CMMDVMHost::createFMNetwork()
 		return false;
 	}
 
-	m_fmNetwork->enable(true);
+	m_fmNetwork->enable(!m_listenOnly);
 
 	return true;
 }
@@ -2270,7 +2271,7 @@ void CMMDVMHost::setMode(unsigned char mode)
 #if defined(USE_DSTAR)
 	case MODE_DSTAR:
 		if (m_dstarNetwork != nullptr && m_dstarEnabled)
-			m_dstarNetwork->enable(true);
+			m_dstarNetwork->enable(!m_listenOnly);
 #if defined(USE_DMR)
 		if (m_dmrNetwork != nullptr)
 			m_dmrNetwork->enable(false);
@@ -2346,7 +2347,7 @@ void CMMDVMHost::setMode(unsigned char mode)
 			m_dstarNetwork->enable(false);
 #endif
 		if (m_dmrNetwork != nullptr && m_dmrEnabled)
-			m_dmrNetwork->enable(true);
+			m_dmrNetwork->enable(!m_listenOnly);
 #if defined(USE_YSF)
 		if (m_ysfNetwork != nullptr)
 			m_ysfNetwork->enable(false);
@@ -2426,7 +2427,7 @@ void CMMDVMHost::setMode(unsigned char mode)
 			m_dmrNetwork->enable(false);
 #endif
 		if (m_ysfNetwork != nullptr && m_ysfEnabled)
-			m_ysfNetwork->enable(true);
+			m_ysfNetwork->enable(!m_listenOnly);
 #if defined(USE_P25)
 		if (m_p25Network != nullptr)
 			m_p25Network->enable(false);
@@ -2502,7 +2503,7 @@ void CMMDVMHost::setMode(unsigned char mode)
 			m_ysfNetwork->enable(false);
 #endif
 		if (m_p25Network != nullptr && m_p25Enabled)
-			m_p25Network->enable(true);
+			m_p25Network->enable(!m_listenOnly);
 #if defined(USE_NXDN)
 		if (m_nxdnNetwork != nullptr)
 			m_nxdnNetwork->enable(false);
@@ -2578,7 +2579,7 @@ void CMMDVMHost::setMode(unsigned char mode)
 			m_p25Network->enable(false);
 #endif
 		if (m_nxdnNetwork != nullptr && m_nxdnEnabled)
-			m_nxdnNetwork->enable(true);
+			m_nxdnNetwork->enable(!m_listenOnly);
 #if defined(USE_M17)
 		if (m_m17Network != nullptr)
 			m_m17Network->enable(false);
@@ -2654,7 +2655,7 @@ void CMMDVMHost::setMode(unsigned char mode)
 			m_nxdnNetwork->enable(false);
 #endif
 		if (m_m17Network != nullptr && m_m17Enabled)
-			m_m17Network->enable(true);
+			m_m17Network->enable(!m_listenOnly);
 #if defined(USE_POCSAG)
 		if (m_pocsagNetwork != nullptr)
 			m_pocsagNetwork->enable(false);
@@ -2730,7 +2731,7 @@ void CMMDVMHost::setMode(unsigned char mode)
 			m_m17Network->enable(false);
 #endif
 		if (m_pocsagNetwork != nullptr)
-			m_pocsagNetwork->enable(true);
+			m_pocsagNetwork->enable(!m_listenOnly);
 #if defined(USE_FM)
 		if (m_fmNetwork != nullptr)
 			m_fmNetwork->enable(false);
@@ -2804,7 +2805,7 @@ void CMMDVMHost::setMode(unsigned char mode)
 			m_pocsagNetwork->enable(false);
 #endif
 		if (m_fmNetwork != nullptr && m_fmEnabled)
-			m_fmNetwork->enable(true);
+			m_fmNetwork->enable(!m_listenOnly);
 #if defined(USE_DSTAR)
 		if (m_dstar != nullptr)
 			m_dstar->enable(false);
@@ -3013,35 +3014,35 @@ void CMMDVMHost::setMode(unsigned char mode)
 	default:
 #if defined(USE_DSTAR)
 		if (m_dstarNetwork != nullptr && m_dstarEnabled)
-			m_dstarNetwork->enable(true);
+			m_dstarNetwork->enable(!m_listenOnly);
 #endif
 #if defined(USE_DMR)
 		if (m_dmrNetwork != nullptr && m_dmrEnabled)
-			m_dmrNetwork->enable(true);
+			m_dmrNetwork->enable(!m_listenOnly);
 #endif
 #if defined(USE_YSF)
 		if (m_ysfNetwork != nullptr && m_ysfEnabled)
-			m_ysfNetwork->enable(true);
+			m_ysfNetwork->enable(!m_listenOnly);
 #endif
 #if defined(USE_P25)
 		if (m_p25Network != nullptr && m_p25Enabled)
-			m_p25Network->enable(true);
+			m_p25Network->enable(!m_listenOnly);
 #endif
 #if defined(USE_NXDN)
 		if (m_nxdnNetwork != nullptr && m_nxdnEnabled)
-			m_nxdnNetwork->enable(true);
+			m_nxdnNetwork->enable(!m_listenOnly);
 #endif
 #if defined(USE_M17)
 		if (m_m17Network != nullptr && m_m17Enabled)
-			m_m17Network->enable(true);
+			m_m17Network->enable(!m_listenOnly);
 #endif
 #if defined(USE_POCSAG)
 		if (m_pocsagNetwork != nullptr)
-			m_pocsagNetwork->enable(true);
+			m_pocsagNetwork->enable(!m_listenOnly);
 #endif
 #if defined(USE_FM)
 		if (m_fmNetwork != nullptr && m_fmEnabled)
-			m_fmNetwork->enable(true);
+			m_fmNetwork->enable(!m_listenOnly);
 #endif
 #if defined(USE_DSTAR)
 		if (m_dstar != nullptr && m_dstarEnabled)
@@ -3115,6 +3116,60 @@ void CMMDVMHost::removeLockFile() const
 		::remove(m_lockFileName.c_str());
 }
 
+// Listen-only: RF is still heard (and published), but nothing is
+// transmitted and every network is off, until turned off again.
+bool g_listenOnly = false;
+
+void CMMDVMHost::setListenOnly(bool on)
+{
+	if (on == m_listenOnly)
+		return;
+
+	m_listenOnly = on;
+	g_listenOnly = on;
+	m_modem->setTXInhibit(on);
+
+#if defined(USE_DSTAR)
+	if (m_dstarNetwork != nullptr)
+		m_dstarNetwork->enable(!on && m_dstarEnabled);
+#endif
+#if defined(USE_DMR)
+	if (m_dmrNetwork != nullptr)
+		m_dmrNetwork->enable(!on && m_dmrEnabled);
+#endif
+#if defined(USE_YSF)
+	if (m_ysfNetwork != nullptr)
+		m_ysfNetwork->enable(!on && m_ysfEnabled);
+#endif
+#if defined(USE_P25)
+	if (m_p25Network != nullptr)
+		m_p25Network->enable(!on && m_p25Enabled);
+#endif
+#if defined(USE_NXDN)
+	if (m_nxdnNetwork != nullptr)
+		m_nxdnNetwork->enable(!on && m_nxdnEnabled);
+#endif
+#if defined(USE_M17)
+	if (m_m17Network != nullptr)
+		m_m17Network->enable(!on && m_m17Enabled);
+#endif
+#if defined(USE_POCSAG)
+	if (m_pocsagNetwork != nullptr)
+		m_pocsagNetwork->enable(!on && m_pocsagEnabled);
+#endif
+#if defined(USE_FM)
+	if (m_fmNetwork != nullptr)
+		m_fmNetwork->enable(!on && m_fmEnabled);
+#endif
+
+	if (on)
+		m_cwIdTimer.stop();
+	else if (m_cwIdTimer.getTimeout() > 0U)
+		m_cwIdTimer.start();
+
+	LogMessage("Listen-only %s", on ? "on: hearing, not transmitting, networks off" : "off");
+}
+
 void CMMDVMHost::remoteControl(const std::string& commandString)
 {
 	if (m_remoteControl == nullptr)
@@ -3177,7 +3232,7 @@ void CMMDVMHost::remoteControl(const std::string& commandString)
 			if (m_dstar != nullptr && !m_dstarEnabled)
 				processEnableCommand(m_dstarEnabled, true);
 			if (m_dstarNetwork != nullptr)
-				m_dstarNetwork->enable(true);
+				m_dstarNetwork->enable(!m_listenOnly);
 			break;
 #endif
 #if defined(USE_DMR)
@@ -3185,7 +3240,7 @@ void CMMDVMHost::remoteControl(const std::string& commandString)
 			if (m_dmr != nullptr && !m_dmrEnabled)
 				processEnableCommand(m_dmrEnabled, true);
 			if (m_dmrNetwork != nullptr)
-				m_dmrNetwork->enable(true);
+				m_dmrNetwork->enable(!m_listenOnly);
 			break;
 #endif
 #if defined(USE_YSF)
@@ -3193,7 +3248,7 @@ void CMMDVMHost::remoteControl(const std::string& commandString)
 			if (m_ysf != nullptr && !m_ysfEnabled)
 				processEnableCommand(m_ysfEnabled, true);
 			if (m_ysfNetwork != nullptr)
-				m_ysfNetwork->enable(true);
+				m_ysfNetwork->enable(!m_listenOnly);
 			break;
 #endif
 #if defined(USE_P25)
@@ -3201,7 +3256,7 @@ void CMMDVMHost::remoteControl(const std::string& commandString)
 			if (m_p25 != nullptr && !m_p25Enabled)
 				processEnableCommand(m_p25Enabled, true);
 			if (m_p25Network != nullptr)
-				m_p25Network->enable(true);
+				m_p25Network->enable(!m_listenOnly);
 			break;
 #endif
 #if defined(USE_NXDN)
@@ -3209,7 +3264,7 @@ void CMMDVMHost::remoteControl(const std::string& commandString)
 			if (m_nxdn != nullptr && !m_nxdnEnabled)
 				processEnableCommand(m_nxdnEnabled, true);
 			if (m_nxdnNetwork != nullptr)
-				m_nxdnNetwork->enable(true);
+				m_nxdnNetwork->enable(!m_listenOnly);
 			break;
 #endif
 #if defined(USE_M17)
@@ -3217,7 +3272,7 @@ void CMMDVMHost::remoteControl(const std::string& commandString)
 			if (m_m17 != nullptr && !m_m17Enabled)
 				processEnableCommand(m_m17Enabled, true);
 			if (m_m17Network != nullptr)
-				m_m17Network->enable(true);
+				m_m17Network->enable(!m_listenOnly);
 			break;
 #endif
 #if defined(USE_FM)
@@ -3339,6 +3394,12 @@ void CMMDVMHost::remoteControl(const std::string& commandString)
 			break;
 		case REMOTE_COMMAND::RELOAD:
 			m_reload = true;
+			break;
+		case REMOTE_COMMAND::LISTEN_ON:
+			setListenOnly(true);
+			break;
+		case REMOTE_COMMAND::LISTEN_OFF:
+			setListenOnly(false);
 			break;
 		default:
 			break;

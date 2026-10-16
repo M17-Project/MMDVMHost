@@ -17,6 +17,7 @@
  */
 
 #include "NXDNKenwoodNetwork.h"
+#include "ListenOnly.h"
 #include "NXDNCRC.h"
 #include "Utils.h"
 #include "Log.h"
@@ -109,6 +110,10 @@ bool CNXDNKenwoodNetwork::open()
 
 bool CNXDNKenwoodNetwork::write(const unsigned char* data, NXDN_NETWORK_MESSAGE_TYPE type)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	assert(data != nullptr);
 
 	switch (type) {

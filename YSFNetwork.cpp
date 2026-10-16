@@ -17,6 +17,7 @@
  */
 
 #include "YSFDefines.h"
+#include "ListenOnly.h"
 #include "YSFNetwork.h"
 #include "Utils.h"
 #include "Log.h"
@@ -71,6 +72,10 @@ bool CYSFNetwork::open()
 
 bool CYSFNetwork::write(const unsigned char* src, const unsigned char* dest, const unsigned char* data, unsigned int count, bool end)
 {
+	// Listen-only: nothing heard on RF goes to the network.
+	if (g_listenOnly)
+		return true;
+
 	assert(data != nullptr);
 
 	unsigned char buffer[200U];

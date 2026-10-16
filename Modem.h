@@ -215,6 +215,9 @@ public:
 
 	bool sendCWId(const std::string& callsign);
 
+	// Listen-only: nothing is transmitted while set.
+	void setTXInhibit(bool inhibit);
+
 	void clock(unsigned int ms);
 
 	void close();
@@ -387,6 +390,7 @@ private:
 	unsigned int               m_fmSpace;
 #endif
 	bool                       m_tx;
+	bool                       m_txInhibit;
 	bool                       m_cd;
 	bool                       m_lockout;
 	bool                       m_error;
