@@ -49,7 +49,14 @@ public:
 	void clear(void);
 
 private:
-	std::unordered_map<std::string, std::string>    m_db;
+	// The fields, in keyList's order, in one string, each ended by
+	// SEPARATOR, trailing empty ones left off: a callsign and a name fit
+	// inside the string itself, with no allocation of their own. (A map
+	// per entry cost ~400 bytes an ID: ~120 MB for the ~315,000 IDs in
+	// DMRIds.dat.)
+	std::string    m_db;
+
+	static int slot(const std::string& key);
 };
 
 #endif
