@@ -208,6 +208,7 @@ public:
 	unsigned int readTransparentData(unsigned char* data);
 
 	bool writeSerialData(const unsigned char* data, unsigned int length);
+	bool writeQSOInfo(const unsigned char* data, unsigned int length);
 	unsigned int readSerialData(unsigned char* data);
 
 	unsigned char getMode() const;
