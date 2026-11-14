@@ -3,8 +3,10 @@ name: Upstream sync
 # Opens a pull request from G4KLX's master when it has commits this master doesn't. Merge it with
 # "Create a merge commit". G4KLX's v1.0 is a fixed tag, so the v1.0 branch isn't synced.
 #
-# GitHub doesn't run other workflows for a pull request opened with the workflow's token, so the
-# merge is test-built here and the result goes in the pull request. Later pushes to G4KLX's master
+# The pull request is opened with SYNC_TOKEN, a fine-grained personal access token for this
+# repository with Pull requests: Read and write, so the Build workflow runs for it without approval.
+# One opened with the workflow's token needs a maintainer to approve each Build run. The merge is
+# also test-built here and the result goes in the pull request. Later pushes to G4KLX's master
 # update the pull request, and the Build workflow runs for those.
 #
 # If the merge conflicts, resolve it locally: merge g4klx/master into a branch off master, open a
@@ -17,7 +19,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   sync:
@@ -28,7 +29,7 @@ jobs:
       run:
         shell: bash
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
     steps:
       - name: Install the tools
         run: |
