@@ -346,6 +346,7 @@ m_nxdnLocalPort(0U),
 #endif
 m_nxdnNetworkModeHang(3U),
 #if defined(USE_NXDN)
+m_nxdnNetworkJitter(320U),
 m_nxdnNetworkDebug(false),
 #endif
 #if defined(USE_M17)
@@ -1102,6 +1103,8 @@ bool CConf::read()
 				m_nxdnGatewayPort = (unsigned short)::atoi(value);
 			else if (::strcmp(key, "ModeHang") == 0)
 				m_nxdnNetworkModeHang = (unsigned int)::atoi(value);
+			else if (::strcmp(key, "Jitter") == 0)
+				m_nxdnNetworkJitter = (unsigned int)::atoi(value);
 			else if (::strcmp(key, "Debug") == 0)
 				m_nxdnNetworkDebug = ::atoi(value) == 1;
 #endif
@@ -2230,6 +2233,11 @@ unsigned short CConf::getNXDNLocalPort() const
 unsigned int CConf::getNXDNNetworkModeHang() const
 {
 	return m_nxdnNetworkModeHang;
+}
+
+unsigned int CConf::getNXDNNetworkJitter() const
+{
+	return m_nxdnNetworkJitter;
 }
 
 bool CConf::getNXDNNetworkDebug() const
