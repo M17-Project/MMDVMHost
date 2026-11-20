@@ -7,10 +7,12 @@ name: Upstream sync
 # repository with Pull requests: Read and write, so the Build workflow runs for it without approval.
 # One opened with the workflow's token needs a maintainer to approve each Build run. The merge is
 # also test-built here and the result goes in the pull request. Later pushes to G4KLX's master
-# update the pull request, and the Build workflow runs for those.
+# update the pull request, and the Build workflow runs for those; each run here then tests the merge
+# again and rewrites the pull request's description.
 #
 # If the merge conflicts, resolve it locally: merge g4klx/master into a branch off master, open a
-# pull request from that branch, and close the one opened here.
+# pull request titled "Merge G4KLX's master" from that branch, and close the one opened here. While
+# that pull request is open, this workflow doesn't open another.
 
 on:
   schedule:
@@ -34,7 +36,7 @@ jobs:
       - name: Install the tools
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends build-essential git ca-certificates gh libmosquitto-dev nlohmann-json3-dev
+          apt-get install -y --no-install-recommends build-essential git ca-certificates gh jq libmosquitto-dev nlohmann-json3-dev
 
       - uses: actions/checkout@v7
         with:
@@ -49,20 +51,25 @@ jobs:
           git fetch -q upstream master
 
           count=$(git rev-list --count HEAD..upstream/master)
-          pr=$(gh pr list -R "$GITHUB_REPOSITORY" --base master --state open --json number,headRepositoryOwner,headRefName \
-            -q '.[] | select(.headRepositoryOwner.login == "g4klx" and .headRefName == "master") | .number')
+          prs=$(gh pr list -R "$GITHUB_REPOSITORY" --base master --state open --json number,title,headRepositoryOwner,headRefName)
+          pr=$(jq -r '.[] | select(.headRepositoryOwner.login == "g4klx" and .headRefName == "master") | .number' <<< "$prs")
+          manual=$(jq -r '.[] | select(.title == "Merge G4KLX'"'"'s master" and (.headRepositoryOwner.login != "g4klx" or .headRefName != "master")) | .number' <<< "$prs" | head -1)
 
           if [ "$count" -eq 0 ]; then
             echo "master is up to date with G4KLX's master" | tee -a "$GITHUB_STEP_SUMMARY"
           elif [ -n "$pr" ]; then
             echo "G4KLX's master has $count new commits, already in #$pr" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "action=update" >> "$GITHUB_OUTPUT"
+          elif [ -n "$manual" ]; then
+            echo "G4KLX's master has $count new commits; a merge is being resolved in #$manual" | tee -a "$GITHUB_STEP_SUMMARY"
           else
-            echo "open=true" >> "$GITHUB_OUTPUT"
+            echo "action=open" >> "$GITHUB_OUTPUT"
           fi
           echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
 
       - name: Test the merge and build
-        if: steps.check.outputs.open == 'true'
+        if: steps.check.outputs.action != ''
         id: test
         run: |
           git config user.name "github-actions[bot]"
@@ -82,8 +89,8 @@ jobs:
           fi
           git merge --abort || true
 
-      - name: Open the pull request
-        if: steps.check.outputs.open == 'true'
+      - name: Open or update the pull request
+        if: steps.check.outputs.action != ''
         run: |
           {
             echo "G4KLX's master has ${{ steps.check.outputs.count }} commits that aren't in this master:"
@@ -94,11 +101,18 @@ jobs:
             echo
             echo "Build of the merge: ${{ steps.test.outputs.build }}"
             echo
-            echo "Merge with \"Create a merge commit\". If the merge conflicts, merge g4klx/master into a branch off master locally, resolve the conflicts there, open a pull request from that branch and close this one."
+            echo "Checked $(date -u '+%Y-%m-%d %H:%M UTC') at $(git rev-parse --short upstream/master)."
+            echo
+            echo "Merge with \"Create a merge commit\". If the merge conflicts, merge g4klx/master into a branch off master locally, resolve the conflicts there, open a pull request titled \"Merge G4KLX's master\" from that branch and close this one."
           } > body.md
-          # Maintainer edits would need write access to G4KLX's repository
-          gh pr create -R "$GITHUB_REPOSITORY" --base master --head g4klx:master --no-maintainer-edit \
-            --title "Merge G4KLX's master" --body-file body.md | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ steps.check.outputs.action }}" = "update" ]; then
+            gh pr edit "${{ steps.check.outputs.pr }}" -R "$GITHUB_REPOSITORY" --body-file body.md | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            # Maintainer edits would need write access to G4KLX's repository
+            gh pr create -R "$GITHUB_REPOSITORY" --base master --head g4klx:master --no-maintainer-edit \
+              --title "Merge G4KLX's master" --body-file body.md | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
 
           if [ "${{ steps.test.outputs.merge }}" != "clean" ] || [ "${{ steps.test.outputs.build }}" = "failed" ]; then
             echo "::error::The merge needs attention: ${{ steps.test.outputs.merge }}, build ${{ steps.test.outputs.build }}"
