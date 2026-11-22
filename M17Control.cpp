@@ -1108,7 +1108,8 @@ void CM17Control::logPacket(bool rf, const std::string& source, const std::strin
 		break;
 	}
 
-	writeJSONPacket(rf ? "rf" : "network", source, dest, data, dataLength, can);
+	// The BER is only known for RF, a negative value leaves it out
+	writeJSONPacket(rf ? "rf" : "network", source, dest, data, dataLength, can, rf ? float(m_rfErrs * 100U) / float(m_rfBits) : -1.0F);
 }
 
 void CM17Control::encodeLinkSetupFrame(const CM17LSF& lsf, unsigned char* data) const
@@ -1370,7 +1371,7 @@ void CM17Control::writeJSONText(const char* text)
 	WriteJSON("Text", json);
 }
 
-void CM17Control::writeJSONPacket(const char* source, const std::string& src, const std::string& dst, const unsigned char* data, unsigned int length, unsigned char can) const
+void CM17Control::writeJSONPacket(const char* source, const std::string& src, const std::string& dst, const unsigned char* data, unsigned int length, unsigned char can, float ber) const
 {
 	assert(source != nullptr);
 	assert(data != nullptr);
@@ -1385,6 +1386,9 @@ void CM17Control::writeJSONPacket(const char* source, const std::string& src, co
 	json["protocol"]     = data[0U];
 	json["length"]       = length;
 	json["can"]          = can;
+
+	if (ber >= 0.0F)
+		json["ber"] = ber;
 
 	if (data[0U] == M17_PACKET_PROTOCOL_SMS) {
 		// The text is null terminated, invalid UTF-8 is dropped when the JSON is written
