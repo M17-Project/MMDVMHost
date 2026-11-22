@@ -695,6 +695,9 @@ void CM17Control::writeNetwork()
 		m_source = m_netLSF.getSource();
 		m_dest   = m_netLSF.getDest();
 
+		// The network CAN is replaced with ours for transmission, so keep it for the JSON
+		unsigned char can = m_netLSF.getCAN();
+
 		m_netLSF.setSource(m_callsign);
 		m_netLSF.setCAN(m_can);
 
@@ -703,17 +706,17 @@ void CM17Control::writeNetwork()
 		case M17_DATA_TYPE_DATA:
 			LogMessage("M17, received network data transmission from %s to %s", m_source.c_str(), m_dest.c_str());
 			m_netState = RPT_NET_STATE::DATA;
-			writeJSONNet("start", m_netState, m_source, m_dest);
+			writeJSONNet("start", m_netState, m_source, m_dest, can);
 			break;
 		case M17_DATA_TYPE_VOICE:
 			LogMessage("M17, received network voice transmission from %s to %s", m_source.c_str(), m_dest.c_str());
 			m_netState = RPT_NET_STATE::AUDIO;
-			writeJSONNet("start", m_netState, m_source, m_dest);
+			writeJSONNet("start", m_netState, m_source, m_dest, can);
 			break;
 		case M17_DATA_TYPE_VOICE_DATA:
 			LogMessage("M17, received network voice + data transmission from %s to %s", m_source.c_str(), m_dest.c_str());
 			m_netState = RPT_NET_STATE::DATA_AUDIO;
-			writeJSONNet("start", m_netState, m_source, m_dest);
+			writeJSONNet("start", m_netState, m_source, m_dest, can);
 			break;
 		default:
 			LogMessage("M17, received network unknown transmission from %s to %s", m_source.c_str(), m_dest.c_str());
@@ -887,7 +890,7 @@ bool CM17Control::processRFHeader(bool lateEntry)
 		if (type != M17_ENCRYPTION_TYPE_NONE) {
 			LogMessage("M17, access attempt with encryption from %s to %s", m_source.c_str(), m_dest.c_str());
 			m_rfState = RPT_RF_STATE::REJECTED;
-			writeJSONRF("rejected", RPT_RF_STATE::AUDIO, m_source, m_dest);
+			writeJSONRF("rejected", RPT_RF_STATE::AUDIO, m_source, m_dest, can);
 			return true;
 		}
 	}
@@ -897,7 +900,7 @@ bool CM17Control::processRFHeader(bool lateEntry)
 		if (!ret) {
 			LogMessage("M17, invalid access attempt from %s to %s", m_source.c_str(), m_dest.c_str());
 			m_rfState = RPT_RF_STATE::REJECTED;
-			writeJSONRF("rejected", RPT_RF_STATE::AUDIO, m_source, m_dest);
+			writeJSONRF("rejected", RPT_RF_STATE::AUDIO, m_source, m_dest, can);
 			return true;
 		}
 	}
@@ -905,7 +908,7 @@ bool CM17Control::processRFHeader(bool lateEntry)
 	if (packetStream == M17_PACKET_TYPE) {
 		LogMessage("M17, received RF packet transmission from %s to %s", m_source.c_str(), m_dest.c_str());
 		m_rfState = RPT_RF_STATE::PACKET;
-		writeJSONRF("start", m_rfState, m_source, m_dest);
+		writeJSONRF("start", m_rfState, m_source, m_dest, can);
 
 		// Packet mode has no way to carry the sender's callsign elsewhere, so the link setup is repeated unchanged
 		if (m_duplex) {
@@ -922,17 +925,17 @@ bool CM17Control::processRFHeader(bool lateEntry)
 	case M17_DATA_TYPE_DATA:
 		LogMessage("M17, received RF%sdata transmission from %s to %s", lateEntry ? " late entry " : " ", m_source.c_str(), m_dest.c_str());
 		m_rfState = RPT_RF_STATE::DATA;
-		writeJSONRF(lateEntry ? "late_entry" : "start", m_rfState, m_source, m_dest);
+		writeJSONRF(lateEntry ? "late_entry" : "start", m_rfState, m_source, m_dest, can);
 		break;
 	case M17_DATA_TYPE_VOICE:
 		LogMessage("M17, received RF%svoice transmission from %s to %s", lateEntry ? " late entry " : " ", m_source.c_str(), m_dest.c_str());
 		m_rfState = RPT_RF_STATE::AUDIO;
-		writeJSONRF(lateEntry ? "late_entry" : "start", m_rfState, m_source, m_dest);
+		writeJSONRF(lateEntry ? "late_entry" : "start", m_rfState, m_source, m_dest, can);
 		break;
 	case M17_DATA_TYPE_VOICE_DATA:
 		LogMessage("M17, received RF%svoice + data transmission from %s to %s", lateEntry ? " late entry " : " ", m_source.c_str(), m_dest.c_str());
 		m_rfState = RPT_RF_STATE::DATA_AUDIO;
-		writeJSONRF(lateEntry ? "late_entry" : "start", m_rfState, m_source, m_dest);
+		writeJSONRF(lateEntry ? "late_entry" : "start", m_rfState, m_source, m_dest, can);
 		break;
 	default:
 		return false;
@@ -990,7 +993,7 @@ void CM17Control::processRFPacket()
 		return;
 	}
 
-	logPacket(true, m_source, m_dest, m_rfPacket, m_rfPacketLength);
+	logPacket(true, m_source, m_dest, m_rfPacket, m_rfPacketLength, m_rfCurrentNetLSF.getCAN());
 
 	if (m_network != nullptr && m_rfTimeoutTimer.isRunning() && !m_rfTimeoutTimer.hasExpired()) {
 		unsigned char netData[M17_LSF_LENGTH_BYTES + M17_PACKET_MAX_LENGTH_BYTES];
@@ -1032,7 +1035,7 @@ void CM17Control::processNetPacket(const unsigned char* data, unsigned int lengt
 		return;
 	}
 
-	logPacket(false, source, dest, packet, packetLength);
+	logPacket(false, source, dest, packet, packetLength, lsf.getCAN());
 
 	// The sender's callsign is kept, as in the RF repeat
 	lsf.setCAN(m_can);
@@ -1080,7 +1083,7 @@ bool CM17Control::checkPacket(const unsigned char* data, unsigned int length) co
 	return CM17CRC::checkCRC16(data, length);
 }
 
-void CM17Control::logPacket(bool rf, const std::string& source, const std::string& dest, const unsigned char* data, unsigned int length) const
+void CM17Control::logPacket(bool rf, const std::string& source, const std::string& dest, const unsigned char* data, unsigned int length, unsigned char can) const
 {
 	assert(data != nullptr);
 
@@ -1105,7 +1108,7 @@ void CM17Control::logPacket(bool rf, const std::string& source, const std::strin
 		break;
 	}
 
-	writeJSONPacket(rf ? "rf" : "network", source, dest, data, dataLength);
+	writeJSONPacket(rf ? "rf" : "network", source, dest, data, dataLength, can);
 }
 
 void CM17Control::encodeLinkSetupFrame(const CM17LSF& lsf, unsigned char* data) const
@@ -1367,7 +1370,7 @@ void CM17Control::writeJSONText(const char* text)
 	WriteJSON("Text", json);
 }
 
-void CM17Control::writeJSONPacket(const char* source, const std::string& src, const std::string& dst, const unsigned char* data, unsigned int length) const
+void CM17Control::writeJSONPacket(const char* source, const std::string& src, const std::string& dst, const unsigned char* data, unsigned int length, unsigned char can) const
 {
 	assert(source != nullptr);
 	assert(data != nullptr);
@@ -1381,6 +1384,7 @@ void CM17Control::writeJSONPacket(const char* source, const std::string& src, co
 	json["dst_callsign"] = dst;
 	json["protocol"]     = data[0U];
 	json["length"]       = length;
+	json["can"]          = can;
 
 	if (data[0U] == M17_PACKET_PROTOCOL_SMS) {
 		// The text is null terminated, invalid UTF-8 is dropped when the JSON is written
@@ -1401,13 +1405,13 @@ void CM17Control::writeJSONPacket(const char* source, const std::string& src, co
 	WriteJSON("M17Packet", json);
 }
 
-void CM17Control::writeJSONRF(const char* action, RPT_RF_STATE state, const std::string& source, const std::string& dest)
+void CM17Control::writeJSONRF(const char* action, RPT_RF_STATE state, const std::string& source, const std::string& dest, unsigned char can)
 {
 	assert(action != nullptr);
 
 	nlohmann::json json;
 
-	writeJSONRF(json, action, state, source, dest);
+	writeJSONRF(json, action, state, source, dest, can);
 
 	WriteJSON("M17", json);
 }
@@ -1441,13 +1445,13 @@ void CM17Control::writeJSONRF(const char* action, float duration, float ber, int
 	WriteJSON("M17", json);
 }
 
-void CM17Control::writeJSONNet(const char* action, RPT_NET_STATE state, const std::string& source, const std::string& dest)
+void CM17Control::writeJSONNet(const char* action, RPT_NET_STATE state, const std::string& source, const std::string& dest, unsigned char can)
 {
 	assert(action != nullptr);
 
 	nlohmann::json json;
 
-	writeJSONNet(json, action, state, source, dest);
+	writeJSONNet(json, action, state, source, dest, can);
 
 	WriteJSON("M17", json);
 }
@@ -1474,7 +1478,7 @@ void CM17Control::writeJSONRF(nlohmann::json& json, const char* action)
 	json["action"] = action;
 }
 
-void CM17Control::writeJSONRF(nlohmann::json& json, const char* action, RPT_RF_STATE state, const std::string& source, const std::string& dest)
+void CM17Control::writeJSONRF(nlohmann::json& json, const char* action, RPT_RF_STATE state, const std::string& source, const std::string& dest, unsigned char can)
 {
 	assert(action != nullptr);
 
@@ -1485,6 +1489,7 @@ void CM17Control::writeJSONRF(nlohmann::json& json, const char* action, RPT_RF_S
 
 	json["source"] = "rf";
 	json["action"] = action;
+	json["can"]    = can;
 
 	switch (state) {
 		case RPT_RF_STATE::AUDIO:
@@ -1523,7 +1528,7 @@ void CM17Control::writeJSONNet(nlohmann::json& json, const char* action)
 	json["action"] = action;
 }
 
-void CM17Control::writeJSONNet(nlohmann::json& json, const char* action, RPT_NET_STATE state, const std::string& source, const std::string& dest)
+void CM17Control::writeJSONNet(nlohmann::json& json, const char* action, RPT_NET_STATE state, const std::string& source, const std::string& dest, unsigned char can)
 {
 	assert(action != nullptr);
 
@@ -1534,6 +1539,7 @@ void CM17Control::writeJSONNet(nlohmann::json& json, const char* action, RPT_NET
 
 	json["source"] = "network";
 	json["action"] = action;
+	json["can"]    = can;
 
 	switch (state) {
 		case RPT_NET_STATE::AUDIO:
