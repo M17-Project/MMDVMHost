@@ -3558,6 +3558,8 @@ void CMMDVMHost::buildModemInfo(nlohmann::json& json)
 		modes.push_back("P25");
 	if (m_modem->hasNXDN())
 		modes.push_back("NXDN");
+	if (m_modem->hasM17())
+		modes.push_back("M17");
 	if (m_modem->hasFM())
 		modes.push_back("FM");
 	if (m_modem->hasPOCSAG())
