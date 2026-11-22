@@ -17,6 +17,7 @@
 		"source": {"type": "string", "enum": ["rf", "network"]},
 		"fm_state": {"type": "string", "enum": ["listening", "kerchunk_rf", "relaying_rf", "relaying_wait_rf", "timeout_rf", "timeout_wait_rf", "kerchunk_ext", "relaying_ext", "relaying_wait_ext", "timeout_ext", "timeout_wait_ext", "hang", "unknown"]},
 		"m17_traffic_type": {"type": "string", "enum": ["audio", "audio_data", "data", "packet"]},
+		"m17_can": {"type": "integer", "minimum": 0, "maximum": 15},
 		"pocsag_source": {"type": "string", "enum": ["local", "network"]},
 		"pocsag_functional": {"type": "string", "enum": ["numeric", "alphanumeric", "alert_1", "alert_2", "end"]},
 		"action": {"type": "string", "enum": ["invalid", "rejected", "start", "late_entry", "end", "lost"]},
@@ -220,6 +221,7 @@
 		"source": {"$ref": "#/$defs/source"},
 		"action": {"$ref": "#/$defs/action"},
 		"traffic_type": {"$ref": "#/$defs/m17_traffic_type"},
+		"can": {"$ref": "#/$defs/m17_can"},
 		"duration": {"$ref": "#/$defs/duration"},
 		"ber": {"$ref": "#/$defs/ber"},
 		"rssi": {
@@ -238,6 +240,7 @@
 		"dst_callsign": {"$ref": "#/$defs/m17_callsign"},
 		"protocol": {"type": "integer", "minimum": 0},
 		"length": {"type": "integer", "minimum": 1, "maximum": 823},
+		"can": {"$ref": "#/$defs/m17_can"},
 		"text": {"type": "string"},
 		"data": {"type": "string"},
 		"required": ["timestamp", "source", "src_callsign", "dst_callsign", "protocol", "length"]

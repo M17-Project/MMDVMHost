@@ -105,7 +105,7 @@ private:
 	void processNetPacket(const unsigned char* data, unsigned int length);
 
 	bool checkPacket(const unsigned char* data, unsigned int length) const;
-	void logPacket(bool rf, const std::string& source, const std::string& dest, const unsigned char* data, unsigned int length) const;
+	void logPacket(bool rf, const std::string& source, const std::string& dest, const unsigned char* data, unsigned int length, unsigned char can) const;
 
 	void encodeLinkSetupFrame(const CM17LSF& lsf, unsigned char* data) const;
 	void encodePacketFrame(const unsigned char* frame, unsigned char* data) const;
@@ -130,20 +130,20 @@ private:
 	void writeJSONRSSI();
 	void writeJSONBER();
 	void writeJSONText(const char* text);
-	void writeJSONPacket(const char* source, const std::string& src, const std::string& dst, const unsigned char* data, unsigned int length) const;
+	void writeJSONPacket(const char* source, const std::string& src, const std::string& dst, const unsigned char* data, unsigned int length, unsigned char can) const;
 
-	void writeJSONRF(const char* action, RPT_RF_STATE state, const std::string& source, const std::string& dest);
+	void writeJSONRF(const char* action, RPT_RF_STATE state, const std::string& source, const std::string& dest, unsigned char can);
 	void writeJSONRF(const char* action, float duration, float ber);
 	void writeJSONRF(const char* action, float duration, float ber, int minRSSI, int maxRSSI, int aveRSSI);
 
-	void writeJSONNet(const char* action, RPT_NET_STATE state, const std::string& source, const std::string& dest);
+	void writeJSONNet(const char* action, RPT_NET_STATE state, const std::string& source, const std::string& dest, unsigned char can);
 	void writeJSONNet(const char* action, float duration);
 
-	void writeJSONRF(nlohmann::json& json, const char* action, RPT_RF_STATE state, const std::string& source, const std::string& dest);
+	void writeJSONRF(nlohmann::json& json, const char* action, RPT_RF_STATE state, const std::string& source, const std::string& dest, unsigned char can);
 	void writeJSONRF(nlohmann::json& json, const char* action);
 	void writeJSONRF(nlohmann::json& json, const char* action, float duration, float ber);
 	void writeJSONNet(nlohmann::json& json, const char* action);
-	void writeJSONNet(nlohmann::json& json, const char* action, RPT_NET_STATE state, const std::string& source, const std::string& dest);
+	void writeJSONNet(nlohmann::json& json, const char* action, RPT_NET_STATE state, const std::string& source, const std::string& dest, unsigned char can);
 };
 
 #endif
