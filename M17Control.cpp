@@ -183,6 +183,14 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 		return false;
 	}
 
+	// Nothing was accepted, for example a transmission on another CAN, so just look for the next one
+	if ((type == TAG_EOT) && (m_rfState == RPT_RF_STATE::LATE_ENTRY)) {
+		m_rfState = RPT_RF_STATE::LISTENING;
+		m_rfCurrentRFLSF.reset();
+		m_rfCurrentNetLSF.reset();
+		return false;
+	}
+
 	// Have we got RSSI bytes on the end?
 	if (len == (M17_FRAME_LENGTH_BYTES + 4U)) {
 		uint16_t raw = 0U;
@@ -210,7 +218,8 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 	decorrelator(data + 2U, temp);
 	interleaver(temp, data + 2U);
 
-	if ((m_rfState == RPT_RF_STATE::LISTENING) && (data[0U] == TAG_HEADER)) {
+	// A header also ends a late entry search, in case the previous transmission's EOT was missed
+	if (((m_rfState == RPT_RF_STATE::LISTENING) || (m_rfState == RPT_RF_STATE::LATE_ENTRY)) && (data[0U] == TAG_HEADER)) {
 		m_rfCurrentRFLSF.reset();
 		m_rfCurrentNetLSF.reset();
 
