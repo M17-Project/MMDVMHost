@@ -26,7 +26,7 @@
 		"ber": {"type": "number", "minimum": 0.0},
 		"rssi": {"type": "integer", "minimum": -200, "maximum": -10},
 		"timestamp": {"type": "string"},
-		"modem_mode": {"type": "string", "enum": ["D-Star", "DMR", "YSF", "P25", "NXDN", "FM", "POCSAG"]},
+		"modem_mode": {"type": "string", "enum": ["D-Star", "DMR", "YSF", "P25", "NXDN", "M17", "FM", "POCSAG"]},
 		"modem_connection": {"type": "string", "enum": ["uart", "udp", "i2c", "null"]}
 	},
 
