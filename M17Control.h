@@ -97,6 +97,8 @@ private:
 	unsigned int               m_rfPacketLength;
 	bool                       m_rfPacketValid;
 	bool                       m_rfPacketComplete;
+	unsigned int               m_rfGNSSFrame;
+	unsigned int               m_netGNSSFrame;
 
 	bool processRFHeader(bool lateEntry);
 
@@ -106,6 +108,8 @@ private:
 
 	bool checkPacket(const unsigned char* data, unsigned int length) const;
 	void logPacket(bool rf, const std::string& source, const std::string& dest, const unsigned char* data, unsigned int length) const;
+
+	void processGNSS(const CM17LSF& lsf, bool rf);
 
 	void encodeLinkSetupFrame(const CM17LSF& lsf, unsigned char* data) const;
 	void encodePacketFrame(const unsigned char* frame, unsigned char* data) const;
@@ -129,6 +133,7 @@ private:
 
 	void writeJSONRSSI();
 	void writeJSONBER();
+	void writeJSONGNSS(bool rf, unsigned char dataSource, unsigned char stationType, double latitude, double longitude, unsigned char validity, float altitude, float speed, unsigned int bearing, unsigned int radius) const;
 	void writeJSONText(const char* text);
 	void writeJSONPacket(const char* source, const std::string& src, const std::string& dst, const unsigned char* data, unsigned int length) const;
 
