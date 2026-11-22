@@ -241,6 +241,7 @@
 		"protocol": {"type": "integer", "minimum": 0},
 		"length": {"type": "integer", "minimum": 1, "maximum": 823},
 		"can": {"$ref": "#/$defs/m17_can"},
+		"ber": {"$ref": "#/$defs/ber"},
 		"text": {"type": "string"},
 		"data": {"type": "string"},
 		"required": ["timestamp", "source", "src_callsign", "dst_callsign", "protocol", "length"]
