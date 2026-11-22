@@ -23,6 +23,7 @@
 #if defined(USE_M17)
 
 #include <cstdio>
+#include <cmath>
 #include <cassert>
 #include <cstring>
 #include <ctime>
@@ -54,6 +55,10 @@ const unsigned char SCRAMBLER[] = {
 
 const unsigned int RSSI_COUNT   = 25U;			// 25 * 40ms = 1000ms
 const unsigned int BER_COUNT    = 25U * 272U;		// 25 * 40ms = 1000ms
+
+// GNSS positions repeat in every LSF, so publish the first of a transmission, then at most one every 15 seconds
+const unsigned int GNSS_FRAMES  = 15U * 25U;
+const unsigned int GNSS_NONE    = 0xFFFFFFFFU;
 
 const unsigned char BIT_MASK_TABLE[] = { 0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U };
 
@@ -106,7 +111,9 @@ m_enabled(true),
 m_rfPacket(nullptr),
 m_rfPacketLength(0U),
 m_rfPacketValid(false),
-m_rfPacketComplete(false)
+m_rfPacketComplete(false),
+m_rfGNSSFrame(GNSS_NONE),
+m_netGNSSFrame(GNSS_NONE)
 {
 	assert(rssiMapper != nullptr);
 
@@ -257,6 +264,10 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 			m_rfPacketLength   = 0U;
 			m_rfPacketValid    = true;
 			m_rfPacketComplete = false;
+			m_rfGNSSFrame      = GNSS_NONE;
+
+			if ((m_rfState == RPT_RF_STATE::AUDIO) || (m_rfState == RPT_RF_STATE::DATA_AUDIO))
+				processGNSS(m_rfCurrentNetLSF, true);
 
 			return true;
 		} else {
@@ -394,6 +405,10 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 			m_rfLSFCount = 0U;
 			m_rfTextBits = 0x00U;
 			::memset(m_rfText, 0x00U, 4U * M17_META_LENGTH_BYTES);
+			m_rfGNSSFrame = GNSS_NONE;
+
+			if ((m_rfState == RPT_RF_STATE::AUDIO) || (m_rfState == RPT_RF_STATE::DATA_AUDIO))
+				processGNSS(m_rfCurrentNetLSF, true);
 
 			// Fall through
 		} else {
@@ -454,6 +469,8 @@ bool CM17Control::writeModem(unsigned char* data, unsigned int len)
 						m_rfTextBits = 0x00U;
 					}
 				}
+
+				processGNSS(m_rfCollectedLSF, true);
 			}
 		}
 
@@ -730,6 +747,7 @@ void CM17Control::writeNetwork()
 		m_netLSFn     = 0U;
 		m_netTextBits = 0x00U;
 		::memset(m_netText, 0x00U, 4U * M17_META_LENGTH_BYTES);
+		m_netGNSSFrame = GNSS_NONE;
 
 		// Create a dummy start message
 		unsigned char start[M17_FRAME_LENGTH_BYTES + 2U];
@@ -794,6 +812,8 @@ void CM17Control::writeNetwork()
 					m_netTextBits = 0x00U;
 				}
 			}
+
+			processGNSS(m_netLSF, false);
 		}
 
 		unsigned char data[M17_FRAME_LENGTH_BYTES + 2U];
@@ -1112,6 +1132,50 @@ void CM17Control::logPacket(bool rf, const std::string& source, const std::strin
 	writeJSONPacket(rf ? "rf" : "network", source, dest, data, dataLength, can, rf ? float(m_rfErrs * 100U) / float(m_rfBits) : -1.0F);
 }
 
+void CM17Control::processGNSS(const CM17LSF& lsf, bool rf)
+{
+	if ((lsf.getEncryptionType() != M17_ENCRYPTION_TYPE_NONE) || (lsf.getEncryptionSubType() != M17_ENCRYPTION_SUB_TYPE_GPS))
+		return;
+
+	unsigned int frames = rf ? m_rfFrames : m_netFrames;
+	unsigned int& last  = rf ? m_rfGNSSFrame : m_netGNSSFrame;
+	if ((last != GNSS_NONE) && ((frames - last) < GNSS_FRAMES))
+		return;
+
+	unsigned char meta[M17_META_LENGTH_BYTES];
+	lsf.getMeta(meta);
+
+	// The validity flags: latitude and longitude, altitude, speed and bearing, radius. The older GNSS
+	// layout has no validity flags, so its data reads as invalid and isn't decoded.
+	unsigned char validity = (meta[1U] >> 4) & 0x0FU;
+	if ((validity & 0x08U) == 0x00U)
+		return;
+
+	last = frames;
+
+	unsigned char dataSource  = (meta[0U] >> 4) & 0x0FU;
+	unsigned char stationType = meta[0U] & 0x0FU;
+
+	unsigned int radius  = 1U << ((meta[1U] >> 1) & 0x07U);
+	unsigned int bearing = ((meta[1U] & 0x01U) << 8) | meta[2U];
+
+	// Latitude and longitude are signed 24-bit fractions of 90 and 180 degrees
+	int32_t lat = (int32_t(uint32_t(meta[3U]) << 24 | uint32_t(meta[4U]) << 16 | uint32_t(meta[5U]) << 8)) >> 8;
+	int32_t lon = (int32_t(uint32_t(meta[6U]) << 24 | uint32_t(meta[7U]) << 16 | uint32_t(meta[8U]) << 8)) >> 8;
+
+	// Rounded to six decimal places, about 10cm
+	double latitude  = std::round(double(lat) / 8388607.0 * 90.0 * 1000000.0) / 1000000.0;
+	double longitude = std::round(double(lon) / 8388607.0 * 180.0 * 1000000.0) / 1000000.0;
+
+	// Altitude in 0.5m steps from -500m, speed in 0.5km/h steps
+	float altitude = float((meta[9U] << 8) | meta[10U]) / 2.0F - 500.0F;
+	float speed    = float((meta[11U] << 4) | (meta[12U] >> 4)) / 2.0F;
+
+	LogMessage("M17, GNSS position from %s: %.6f, %.6f", m_source.c_str(), latitude, longitude);
+
+	writeJSONGNSS(rf, dataSource, stationType, latitude, longitude, validity, altitude, speed, bearing, radius);
+}
+
 void CM17Control::encodeLinkSetupFrame(const CM17LSF& lsf, unsigned char* data) const
 {
 	assert(data != nullptr);
@@ -1355,6 +1419,32 @@ void CM17Control::writeJSONBER()
 		m_bitErrsAccum = 0U;
 		m_bitsCount    = 1U;
 	}
+}
+
+void CM17Control::writeJSONGNSS(bool rf, unsigned char dataSource, unsigned char stationType, double latitude, double longitude, unsigned char validity, float altitude, float speed, unsigned int bearing, unsigned int radius) const
+{
+	nlohmann::json json;
+
+	json["timestamp"]    = CUtils::createTimestamp();
+	json["source"]       = rf ? "rf" : "network";
+	json["src_callsign"] = m_source;
+	json["data_source"]  = dataSource;
+	json["station_type"] = stationType;
+	json["latitude"]     = latitude;
+	json["longitude"]    = longitude;
+
+	if ((validity & 0x04U) == 0x04U)
+		json["altitude"] = altitude;
+
+	if ((validity & 0x02U) == 0x02U) {
+		json["speed"]   = speed;
+		json["bearing"] = bearing;
+	}
+
+	if ((validity & 0x01U) == 0x01U)
+		json["radius"] = radius;
+
+	WriteJSON("M17GNSS", json);
 }
 
 void CM17Control::writeJSONText(const char* text)
