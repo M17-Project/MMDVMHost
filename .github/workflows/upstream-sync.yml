@@ -107,7 +107,8 @@ jobs:
           } > body.md
 
           if [ "${{ steps.check.outputs.action }}" = "update" ]; then
-            gh pr edit "${{ steps.check.outputs.pr }}" -R "$GITHUB_REPOSITORY" --body-file body.md | tee -a "$GITHUB_STEP_SUMMARY"
+            # gh pr edit fails on the retired Projects (classic) API
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/pulls/${{ steps.check.outputs.pr }}" -F body=@body.md --jq .html_url | tee -a "$GITHUB_STEP_SUMMARY"
           else
             # Maintainer edits would need write access to G4KLX's repository
             gh pr create -R "$GITHUB_REPOSITORY" --base master --head g4klx:master --no-maintainer-edit \
