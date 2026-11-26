@@ -394,10 +394,10 @@ m_remoteControlEnabled(false)
 
 // WPSD: a per-mode offset in [Modem], on top of RXOffset and TXOffset, for
 // a modem whose firmware says ModeOffsets: D-StarRXOffset, D-StarTXOffset,
-// DMR..., YSF..., P25..., NXDN... (named like D-StarTXLevel).
+// DMR..., YSF..., P25..., NXDN..., M17... (named like D-StarTXLevel).
 static bool modeOffsetKey(const char* key, int* rx, int* tx, const char* value)
 {
-	static const char* const names[MODE_OFFSETS] = {"D-Star", "DMR", "YSF", "P25", "NXDN"};
+	static const char* const names[MODE_OFFSETS] = {"D-Star", "DMR", "YSF", "P25", "NXDN", "M17"};
 
 	for (unsigned int i = 0U; i < MODE_OFFSETS; i++) {
 		size_t n = ::strlen(names[i]);
@@ -624,7 +624,7 @@ bool CConf::read()
 				m_nxdnIdLookupTime = (unsigned int)::atoi(value);
 #endif
 		} else if (section == SECTION::MODEM && modeOffsetKey(key, m_modeRXOffset, m_modeTXOffset, value)) {
-			// WPSD: D-StarRXOffset ... NXDNTXOffset (see modeOffsetKey)
+			// WPSD: D-StarRXOffset ... M17TXOffset (see modeOffsetKey)
 		} else if (section == SECTION::MODEM && m_lights.setKey(key, value)) {
 			// WPSD: LightsOff ... LightsOffDays (see Lights.h)
 		} else if (section == SECTION::MODEM) {

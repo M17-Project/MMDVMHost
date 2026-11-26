@@ -60,7 +60,7 @@ m_from(22 * 60),
 m_to(7 * 60),
 m_zone()
 {
-	m_pair[0U] = m_pair[1U] = LIGHTS_BUILT;
+	m_pair[0U] = m_pair[1U] = m_pair[2U] = LIGHTS_BUILT;
 
 	for (unsigned int i = 0U; i < 7U; i++)
 		m_days[i] = true;
@@ -82,8 +82,10 @@ bool CLights::setKey(const char* key, const char* value)
 		m_rxtx = ::atoi(value) != 0;
 	else if (::strcmp(key, "NXDNLights") == 0)
 		m_pair[0U] = word(value, PAIR, 4U);
-	else if (::strcmp(key, "POCSAGLights") == 0)
+	else if (::strcmp(key, "M17Lights") == 0)
 		m_pair[1U] = word(value, PAIR, 4U);
+	else if (::strcmp(key, "POCSAGLights") == 0)
+		m_pair[2U] = word(value, PAIR, 4U);
 	else if (::strcmp(key, "LightsSchedule") == 0)
 		m_schedule = ::atoi(value) == 1;
 	else if (::strcmp(key, "LightsOffFrom") == 0) {
@@ -117,8 +119,8 @@ void CLights::bytes(unsigned char* out, bool dark) const
 	out[3U] = m_call ? 1U : 0U;
 	out[4U] = m_rxtx ? 1U : 0U;
 	out[5U] = m_pair[0U];
-	out[6U] = LIGHTS_BUILT;   // byte 6 is left as the build chose
-	out[7U] = m_pair[1U];
+	out[6U] = m_pair[1U];
+	out[7U] = m_pair[2U];
 	out[8U] = m_invert ? 1U : 0U;
 }
 
@@ -145,12 +147,13 @@ std::string CLights::describe(bool dark) const
 		return dark && !m_off ? "all off (schedule)" : "all off";
 
 	char buffer[160U];
-	::snprintf(buffer, sizeof(buffer), "service %s%s, idle %s, call %s, RX/TX %s, NXDN %s, POCSAG %s",
+	::snprintf(buffer, sizeof(buffer), "service %s%s, idle %s, call %s, RX/TX %s, NXDN %s, M17 %s, POCSAG %s",
 		m_service == LIGHTS_BUILT ? "as built" : SERVICE[m_service], m_invert ? " (inverted)" : "",
 		m_idle == LIGHTS_BUILT ? "as built" : IDLE[m_idle],
 		m_call ? "on" : "off", m_rxtx ? "on" : "off",
 		m_pair[0U] == LIGHTS_BUILT ? "as built" : PAIR[m_pair[0U]],
-		m_pair[1U] == LIGHTS_BUILT ? "as built" : PAIR[m_pair[1U]]);
+		m_pair[1U] == LIGHTS_BUILT ? "as built" : PAIR[m_pair[1U]],
+		m_pair[2U] == LIGHTS_BUILT ? "as built" : PAIR[m_pair[2U]]);
 
 	return buffer;
 }

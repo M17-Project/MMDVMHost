@@ -3018,14 +3018,12 @@ bool CModem::setFrequency()
 // ModeOffsets (zeros too, so offsets from an earlier run are cleared): an
 // RX and a TX offset per mode, signed 16-bit little-endian, in
 // MODE_OFFSETS order. The firmware adds them to SET_FREQ's frequencies
-// while that mode is on. Its table has six entries; the sixth is always
-// sent as zero.
+// while that mode is on.
 bool CModem::setModeOffsets()
 {
 	assert(m_port != nullptr);
 
-	const unsigned int ENTRIES = 6U;
-	unsigned char buffer[3U + ENTRIES * 4U];
+	unsigned char buffer[3U + MODE_OFFSETS * 4U];
 	::memset(buffer, 0x00U, sizeof(buffer));
 
 	buffer[0U] = MMDVM_FRAME_START;

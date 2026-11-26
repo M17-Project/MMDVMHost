@@ -37,7 +37,8 @@
 //   CallLights=1          the mode lights during a call
 //   RXTXLights=1          the RX and TX lights
 //   NXDNLights=           own, ysf-p25, dstar-p25 or dstar-dmr: which
-//   POCSAGLights=         lights show that mode
+//   M17Lights=            lights show that mode
+//   POCSAGLights=
 //   LightsSchedule=0|1    every light dark between LightsOffFrom and
 //   LightsOffFrom=22:00   LightsOffTo (local time) on LightsOffDays (0
 //   LightsOffTo=07:00     Sunday ... 6 Saturday: the day a dark spell
@@ -69,7 +70,7 @@ private:
 	unsigned char m_idle;
 	bool          m_call;
 	bool          m_rxtx;
-	unsigned char m_pair[2U];   // NXDN, POCSAG
+	unsigned char m_pair[3U];   // NXDN, M17, POCSAG
 	bool          m_schedule;
 	int           m_from;   // minutes after midnight
 	int           m_to;

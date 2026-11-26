@@ -224,7 +224,7 @@ public:
 #endif
 
 	// WPSD: per-mode offsets, by MODE_OFFSETS index (D-Star, DMR, System
-	// Fusion, P25, NXDN).
+	// Fusion, P25, NXDN, M17).
 	int          getModeRXOffset(unsigned int mode) const;
 	int          getModeTXOffset(unsigned int mode) const;
 
