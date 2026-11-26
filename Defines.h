@@ -29,6 +29,10 @@
 #define	USE_FM
 #define	USE_M17
 
+// WPSD: how many modes have their own offsets (MMDVM_SET_OFFSETS): D-Star,
+// DMR, System Fusion, P25, NXDN, in that order.
+const unsigned int MODE_OFFSETS = 5U;
+
 const unsigned char MODE_IDLE    = 0U;
 const unsigned char MODE_DSTAR   = 1U;
 const unsigned char MODE_DMR     = 2U;
